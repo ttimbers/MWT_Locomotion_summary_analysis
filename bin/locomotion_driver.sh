@@ -1,9 +1,13 @@
 ##This is the driver script that will call modulars scripts to attack each chunk
 ##of the problem
+##
+##Set working directory to project's root directory
 
 ##zip all folders all MWT data folders in directory to be analyzed
 ##must be in "data" working directory 
+cd data
 for foldername in *; do cd $foldername; zip ../$foldername *; cd ..; done
+cd ..
 
 ##optional challenge - copy them to server
 ##Tiff
