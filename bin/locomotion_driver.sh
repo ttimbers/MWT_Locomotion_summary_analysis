@@ -2,7 +2,8 @@
 ##of the problem
 
 ##zip all folders all MWT data folders in directory to be analyzed
-##re-use Tiff's script
+##must be in "data" working directory 
+for foldername in *; do cd $foldername; zip ../$foldername *; cd ..; done
 
 ##optional challenge - copy them to server
 ##Tiff
