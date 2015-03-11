@@ -30,7 +30,7 @@ for zipfolder in * do java -Xmx8g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N
 cd ..
 
 ## move unzipped folder into a new directory (chore_data)
-## Catrina
+## Catrina.
 ## pwd = data
 ## have zip files and choreography folders
 ## before running choreography? mkdir chore_data
