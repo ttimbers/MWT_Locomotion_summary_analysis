@@ -39,7 +39,7 @@ cd ..
 cd data
 mkdir chore_data
 ##figure out how to move a directory ##K & C
-mv */ chore_data
+mv [0-9]*/ chore_data
 cd ..
 
 ## need to create a large file containing all data files with 
