@@ -31,10 +31,21 @@ cd ..
 
 ## move unzipped folder into a new directory (chore_data)
 ## Catrina
+## pwd = data
+## have zip files and choreography folders
+## before running choreography? mkdir chore_data
+## mv *.zip chore_data
+## do choreography in chore_data folder
+## mv chore_data/*.zip .
+
 
 ## need to create a large file containing all data files with 
 ## data, plate name and strain name in each row
 ## Catrina
+## cd chore_data
+## cd for each foldername
+## for each .dat file add column with .. name
+## for each .dat file add column with the .dat filename
 
 ## create figures
 
