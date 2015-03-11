@@ -17,6 +17,13 @@ cd ..
 ## destroy/delete unzipped MWT folder
 ## Kwangjin
 
+cd data
+for A in *
+do
+rm -r $A/*
+rmdir $A
+done
+
 ## optional - copy .zip files to a webdav server
 ## Note: The mountpoint directory /Volumes/mntpnt/ must be created before 
 ## issuing the mount_webdav command. 
