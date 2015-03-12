@@ -30,7 +30,8 @@ path on webdav where .zip folders should be saved, and path to chore.jar
 (offline analys program Choreography). See example below:
 
 ~~~
-bash bin/locomotion_driver.sh https://webdav.server/location folder_to_backup_to /Users/this_user/Chore.jar
+bash bin/locomotion_driver.sh https://webdav.server/location folder_to_backup_to 
+/Users/this_user/Chore.jar
 ~~~
 
 * More instructions to come as code is developed further.
