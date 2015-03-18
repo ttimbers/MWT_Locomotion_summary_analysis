@@ -1,7 +1,10 @@
 # Summary analysis of Locomotion experiments on the Multi-worm Tracker
 The aim of this project is to create software that can be used after running
 a 600s basal locomotion experiment using the Multi-worm tracker (Swierczek et al., 2011)
-to generate summary figures and statistics for that experiment.
+to generate summary figures and statistics for that experiment. 
+
+This script also backs up experiment .zip files to a webdav server specified by the
+user. 
 
 ## Figures it generates
 * Speed versus time over experiment duration
@@ -17,4 +20,18 @@ to generate summary figures and statistics for that experiment.
 * Mean area, length and width for each strain, and ANCOVA comparing to wild-type
 
 ## How to use it
-Instructions to come as code is developed.
+
+* Set working directory to project's root directory
+
+* Call locomotion_driver.sh from the Bash Shell
+
+* locomotion_driver.sh requires the following arguments from the user: webdav server URL,
+path on webdav where .zip folders should be saved, and path to chore.jar 
+(offline analys program Choreography). See example below:
+
+~~~
+bash bin/locomotion_driver.sh https://webdav.server/location folder_to_backup_to 
+/Users/this_user/Chore.jar
+~~~
+
+* More instructions to come as code is developed further.
