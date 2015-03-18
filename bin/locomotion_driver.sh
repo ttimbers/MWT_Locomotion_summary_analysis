@@ -29,6 +29,9 @@ cp *.zip /Volumes/$2
 ##  Use --help to list valid options.
 for zipfolder in *.zip; do java -Xmx8g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o DbsMmexy --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
 
+##For window users: for zipfolder in *.zip; do java -Xmx1g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o DbsMmexy --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
+
+
 ## move unzipped folder into a new directory (called chore_data)
 mv */ $(mkdir chore_data)
 
