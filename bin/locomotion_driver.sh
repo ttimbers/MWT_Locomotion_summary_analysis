@@ -6,9 +6,10 @@
 ## Requires the following input from the user:
 ##		$1: webdav server URL 
 ##		$2: path on webdav where .zip folders should be saved (including where it is 
-			mounted on your computer (e.g /path_on_webdav)
+##			mounted on your computer (e.g /path_on_webdav)
 ##		$3: path to chore.jar (offline analys program Choreography)
-##		$4: gigabytes of memory to be used to run Choreography
+##		$4: gigabytes of memory to be used to run Choreography (dependent upon
+##			the machine you are using
 
 ## Connect to webdav (so you can backup files)
 ## you will be prompted for your webdav username and password
@@ -31,12 +32,8 @@ cp *.zip $2
 ##  Use --help to list valid options.
 for zipfolder in *.zip; do java -Xmx$4g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o DbsMmexy --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
 
-##For window users: for zipfolder in *.zip; do java -Xmx1g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o DbsMmexy --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
-
-
 ## move unzipped folder into a new directory (called chore_data)
 mv */ $(mkdir chore_data)
-
 
 ## need to create a large file containing all data files with 
 ## data, plate name and strain name in each row
