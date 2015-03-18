@@ -37,6 +37,7 @@ for zipfolder in *.zip; do java -Xmx$4g -jar $3 --shadowless -p 0.027 -M 2 -t 20
 ## move unzipped folder into a new directory (called chore_data)
 mv */ $(mkdir chore_data)
 
+
 ## need to create a large file containing all data files with 
 ## data, plate name and strain name in each row
 ##grep -r '[0-9]' $(find ./data -name '*.dat') > merged.file
