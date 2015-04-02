@@ -1,24 +1,23 @@
 ##load MWT data
-setwd("data/chore_data")
-data <- read.table("merged.file")
+data <- read.table("data/chore_data/merged.file")
 
-## split up column V1 into identifier and time
+## split up column V1 into date, plate, time and strain 
 library(stringr)
-df_V1 <- data$V1
-plate_tag  <- "2[0-9]{8}"
-plate_names  <- str_extract(V1, plate_tag)
-## plate_names  <- sub("/", "", plate_names)
-time_tag  <- ":[0-9.]{1,}"
-time  <- str_extract(df_V1, time_tag)
-time  <- sub(":", "", time)
-df.data <- cbind(plate_names, time, data[,c(2:7)])
-data <- df.data
-rm(df.data)
+date <- str_extract(data$V1, "[0-9]{8}")
+plate <- str_extract(data$V1, "[0-9]{8}_[0-9]{6}")
+time <- str_extract(data$V1, "[0-9]+[.][0-9]+")
+strain <- str_extract(data$V1,"[A-Za-z]+[-]?[0-9]+")
+
+## combine new columns with merged file
+new.data <- cbind(date, plate, time, strain, data[,2:dim(data)[2]])
+data <- new.data
+rm(new.data)
 
 ##clean up the workspace
-rm(time, time_tag, plate_names, plate_tag, df_V1)
+rm(date, plate, time, strain)
 
 ##rename columns  
-colnames(data) <- c("plate", "time", "ID", "bias", "speed", "morphwidth", "midline", "area")
+colnames(data) <- c("date", "plate", "time", "strain", "ID", "bias", "speed", "morphwidth", "midline", "area", "loc_x", "loc_y")
 
 ## save data as a file
+write.table(data, file="data/chore_data/merged.file.parsed", col.names=TRUE, row.names=FALSE, quote=FALSE, append=FALSE)
