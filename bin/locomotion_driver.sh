@@ -30,7 +30,7 @@ cp *.zip $2
 ## call choreography to analyze the MWT data (each .zip in the folder data)
 ## error: Exactly one filename required
 ##  Use --help to list valid options.
-for zipfolder in *.zip; do java -Xmx$4g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o DbsMmexy --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
+for zipfolder in *.zip; do java -Xmx$4g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o fDpesSlLwWaAmMkbPcdxyuvorC1234 --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
 
 ## move unzipped folder into a new directory (called chore_data)
 mv */ $(mkdir chore_data)
