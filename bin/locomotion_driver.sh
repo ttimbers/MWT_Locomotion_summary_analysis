@@ -45,9 +45,8 @@ cd ../..
 
 ## Use regular expressions in R to parse apart the information in the filepath
 ## so we can get data, plate ID and strain as delimited columns
-rscript bin/Column_identification.R
-##or call R script with the command line using an argument for the filename we want to parse
-##rscript bin/Column_identification_command.R $5 
+## call R script with the command line using an argument for the filename we want to parse
+   rscript bin/Column_identification_command.R $5 
 
 ## create figures
 
