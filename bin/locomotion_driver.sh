@@ -10,6 +10,7 @@
 ##		$3: path to chore.jar (offline analys program Choreography)
 ##		$4: gigabytes of memory to be used to run Choreography (dependent upon
 ##			the machine you are using
+##		$5: argument for rscript (e.g. "/Users/catrinaloucks/Documents/PhD/MWT_Locomotion_summary_analysis/data/chore_data/merged.file")
 
 ## Connect to webdav (so you can backup files)
 ## you will be prompted for your webdav username and password
@@ -46,7 +47,7 @@ cd ../..
 ## so we can get data, plate ID and strain as delimited columns
 rscript bin/Column_identification.R
 ##or call R script with the command line using an argument for the filename we want to parse
-##rscript bin/Column_identification_command.R "/Users/catrinaloucks/Documents/PhD/MWT_Locomotion_summary_analysis/data/chore_data/merged.file" 
+##rscript bin/Column_identification_command.R $5 
 
 ## create figures
 
