@@ -1,5 +1,6 @@
 ##load MWT data
-fromfile <- read.table("data/chore_data/merged.file")
+##fromfile <- read.table("data/chore_data/merged.file")
+##for using merge.file as an input into the following function - extract.col(read.table("data/chore_data/merged.file"))
 extract.col <- function(data){
   ## split up column V1 into date, plate, time and strain 
   library(stringr)
@@ -24,7 +25,7 @@ extract.col <- function(data){
 }
 
 ##using function to extract column names
-parsed.data  <- extract.col(fromfile)
+parsed.data  <- extract.col(read.table("data/chore_data/merged.file"))
 
 ## save data as a file
 write.table(parsed.data, file="data/chore_data/merged.file.parsed", col.names=TRUE, row.names=FALSE, quote=FALSE, append=FALSE)
