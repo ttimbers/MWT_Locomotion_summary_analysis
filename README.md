@@ -34,4 +34,4 @@ bash bin/locomotion_driver.sh https://webdav.server/location folder_to_backup_to
 /Users/this_user/Chore.jar
 ~~~
 
-* More instructions to come as code is developed further.
+* This code is not working yet. More instructions to come as code is developed further.
