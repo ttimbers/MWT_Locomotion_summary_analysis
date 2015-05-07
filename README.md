@@ -26,12 +26,13 @@ user.
 * Call locomotion_driver.sh from the Bash Shell
 
 * locomotion_driver.sh requires the following arguments from the user: webdav server URL,
-path on webdav where .zip folders should be saved, and path to chore.jar 
-(offline analys program Choreography). See example below:
+path on webdav where .zip folders should be saved, the path to chore.jar 
+(offline analys program Choreography), and the gigabytes of memory to be used to run 
+Choreography. See example below:
 
 ~~~
 bash bin/locomotion_driver.sh https://webdav.server/location folder_to_backup_to 
-/Users/this_user/Chore.jar
+/Users/this_user/Chore.jar 16
 ~~~
 
-* More instructions to come as code is developed further.
+* This code is not working yet. More instructions to come as code is developed further.
