@@ -45,8 +45,6 @@ plot.speed.time <- function(parsed.data) {
   parsed.data$time  <- as.numeric(levels(parsed.data$time))[parsed.data$time]
   
   ##plot speed decay over time  
-  strains  <- unique(strain)
-  
   ##bin into time intervals to make it quicker to plot (average speed over every 20s for 10 min)
   
   ##divide time into intervals (e.g. 20-40) to the last time point
@@ -72,6 +70,7 @@ plot.speed.time <- function(parsed.data) {
   
  
   ##make plot with error bars
+  require(ggplot2)
   g  <- ggplot(speed.tint.plate.strain, aes(x = time, y = mean.speed, colour = strain)) + 
     geom_errorbar(aes(ymin=mean.speed-se, ymax=mean.speed+se), width=.1) +
     geom_line(aes(group = strain)) + geom_point() +
