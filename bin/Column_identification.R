@@ -41,31 +41,46 @@ extract.col <- function(data){
 
 plot.speed.time <- function(parsed.data) {
 
-  ##make time numeric
-  parsed.data$time  <- as.numeric(levels(plate.data$time))[plate.data$time]
+  ##replace time column (factor) with time as numeric
+  parsed.data$time  <- as.numeric(levels(parsed.data$time))[parsed.data$time]
   
   ##plot speed decay over time  
-  attach(parsed.data)
   strains  <- unique(strain)
   
   ##bin into time intervals to make it quicker to plot (average speed over every 20s for 10 min)
   
   ##divide time into intervals (e.g. 20-40) to the last time point
-  time.periods <- as.character(cut(time, breaks=seq(0, max(time), by = 20)))
+  cut1 <- cut(parsed.data$time, breaks=seq(0, max(parsed.data$time), by = 20))
   
   ##extract intervals as the max of the interval (e.g. 40 from 20-40)
-  time.interval <- as.numeric(str_extract(time.periods, "[1-9]{1}[0-9]+"))
+  time.interval <- as.numeric(str_extract(cut1, "[1-9]{1}[0-9]+"))
   
-  ##from SWC workshop to add a new column splitting up a dataset into TRUE and FALSE
-  ##gapminder$time_period <- ifelse(test = gapminder$year<1980,
-  ##                                yes = "early"
-  ##                                no = "late")
-
-  detach(parsed.data)
+  parsed.data.tint <- parsed.data
+  
+  ##replace time column with the time interval (upper limit of time period)
+  parsed.data.tint$time <- time.interval
+  
+  ##get rid of data from 0-40s of the experiment (sometimes the tracker doesn't start tracking 
+  ##until 15s into the experiment)
+  parsed.data.tint  <- parsed.data.tint[which(parsed.data.tint$time>40),]
   
   library(plyr)
-  time.interval.plate <- ddply(parsed.data,.(strain,time,plate),summarise,speed=mean(speed))
-  time.interval.agg <- ddply(parsed.data,.(strain,time),summarise,N=length(speed),mean.speed=mean(speed),sd=sd(speed), se=sd/sqrt(N))
+  ##average over each plate for each time period
+  speed.tint.plate <- ddply(parsed.data.tint,.(strain,time,plate),summarise,speed=mean(speed, na.rm=TRUE))
+  ##average over each strain for each time period
+  speed.tint.plate.strain <- ddply(speed.tint.plate,.(strain,time),summarise,N=length(speed),mean.speed=mean(speed),sd=sd(speed), se=sd/sqrt(N))
+  
+ 
+  ##make plot with error bars
+  g  <- ggplot(speed.tint.plate.strain, aes(x = time, y = mean.speed, colour = strain)) + 
+    geom_errorbar(aes(ymin=mean.speed-se, ymax=mean.speed+se), width=.1) +
+    geom_line(aes(group = strain)) + geom_point() +
+    labs(x="Time", y="Speed") +
+    theme_bw()
+  
+  g
+  
+  
   
 }
 
@@ -73,30 +88,6 @@ plot.speed.time <- function(parsed.data) {
 
 
 
-
-library(plyr)
-plate.data.tint.plate <- ddply(plate.data.tint,.(strain,time,plate),summarise,speed=mean(speed))
-plate.data.tint.agg <- ddply(plate.data.tint.plate,.(strain, time),summarise,N=length(speed),mean.speed=mean(speed),sd=sd(speed), se=sd/sqrt(N))
-
-##get rid of data from 0-40s of the experiment (sometimes the tracker doesn't start tracking 
-##until 15s into the experiment)
-plate.data.tint.agg <- plate.data.tint.agg[which(plate.data.tint.agg$time>40),]
-
-##make plot
-##plot the points
-plot(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[3])] ,plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[3])], pch=18, xlab="Time(s)",ylab="Speed(mm/s)", ylim = c(0,1.4))
-points(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[2])] ,plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[2])],col=2,pch=18)
-points(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[1])] ,plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[1])],col=4,pch=18)
-points(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[2])] ,plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[4])],col=5,pch=18)
-points(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[1])] ,plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[5])],col=8,pch=18)
-##plot the error bars (standard error)
-segments(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[3])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[3])]-plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[3])],plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[3])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[3])]+plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[3])])
-segments(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[2])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[2])]-plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[2])],plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[2])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[2])]+plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[2])], col=2)
-segments(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[1])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[1])]-plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[1])],plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[1])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[1])]+plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[1])], col=4)
-segments(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[4])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[4])]-plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[4])],plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[4])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[4])]+plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[4])], col=5)
-segments(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[5])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[5])]-plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[5])],plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[5])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[5])]+plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[5])], col=8)
-##plot the legend
-legend("topright",bty="n",y.intersp=1,c(as.character(strains[1]),as.character(strains[2]),as.character(strains[3]), as.character(strains[4]), as.character(strains[5])),col=c(1,2,4,5,8),pch=(18))
 
 
 ##save plot
