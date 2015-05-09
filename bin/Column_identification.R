@@ -12,7 +12,30 @@ main <- function() {
   ## save data as a file
   write.table(parsed.data, file="args[1].parsed", col.names=TRUE, row.names=FALSE, quote=FALSE, append=FALSE)
   
-  ##call script to call speed vs. time
+  ## call script to call speed vs. time
+
+  ## use function to get mean size data for each worm (mean size data from 60 to 70s)
+  mean.size.data <- mean.size(parsed.data)
+  
+  ## use mean size data to make area violin plot (with jittered points)
+  violinplot.area(mean.size.data)
+  
+  ## use mean size data to make length violin plot (with jittered points)
+  violinplot.length(mean.size.data)
+  
+  ## use mean size data to make width violin plot (with jittered points)
+  violinplot.width(mean.size.data)
+  
+  ## use mean size data to make area box plot
+  boxplot.area(mean.size.data)
+  
+  ## use mean size data to make length box plot
+  boxplot.length(mean.size.data)
+  
+  ## use mean size data to make width box plot
+  boxplot.width(mean.size.data)
+  
+  
 }
 
 
@@ -27,11 +50,13 @@ extract.col <- function(data){
   strain <- str_extract(data$V1,"[A-Za-z]+[-]?[0-9]+")
   
   ## combine new columns with merged file
-  new.data <- cbind(date, plate, time, strain, data[,2:dim(data)[2]])
-  
+  new.data <- cbind(date, plate, time, strain, data[,2:dim(data)[2]])  
   
   ##rename columns  
   colnames(new.data) <- c("date", "plate", "time", "strain", "frame", "ID", "number", "goodnumber", "persistance", "area", "speed", "angularspeed", "length", "rellength", "width", "relwidth", "aspect", "relaspect", "midline", "morphwidth", "kink", "bias", "pathlen", "curve", "dir", "loc_x", "loc_y", "vel_x", "vel_y", "orient", "crab")
+  
+  ##replace time column (factor) with time as numeric
+  new.data$time  <- as.numeric(levels(parsed.data$time))[parsed.data$time]
   
   return(new.data)
   
@@ -40,9 +65,6 @@ extract.col <- function(data){
 ##function for plotting time vs. speed
 
 plot.speed.time <- function(parsed.data) {
-
-  ##replace time column (factor) with time as numeric
-  parsed.data$time  <- as.numeric(levels(parsed.data$time))[parsed.data$time]
   
   ##plot speed decay over time  
   ##bin into time intervals to make it quicker to plot (average speed over every 20s for 10 min)
@@ -83,7 +105,106 @@ plot.speed.time <- function(parsed.data) {
   
 }
 
+## given parsed data make table with mean area, length, and width (from 60-70s) of each worm (including strain)
+mean.size <- function(parsed) {
+  
+  ##replace time column (factor) with time as numeric
+  parsed.data$time  <- as.numeric(levels(parsed$time))[parsed$time]
+  
+  ## subset parsed data to times between 60 seconds and 70 seconds
+  time.subset <- parsed[parsed$time < 70 & parsed$time > 60, ]
+  
+  ## aggregate mean area, length, and width of each worm with each strain
+  mean.subset <- aggregate(cbind(area, length, width) ~ ID + strain, time.subset, mean)
 
+}
+
+## given means, make body area violin plot
+## TODO: add axis labels with units, fix title
+violinplot.area <- function(mean.subset) {
+  
+  ## initiate ggplot
+  g <- ggplot(mean.subset, aes(x = strain, y = area))
+  
+  ## make violin plot of area for each strain
+  g <- g+ggtitle("Violin Plot of Worm Area")          ## not sure if title is good or even needed..
+  g <- g+theme(plot.title = element_text(size=20, face="bold", vjust=2))
+  g <- g+geom_violin(alpha=0.5, color="gray") + geom_jitter(alpha = 0.5, position = position_jitter(width = 0.1))
+  
+  g
+}
+
+## given means, make body length violin plot
+## TODO: add axis labels with units, fix title
+violinplot.length <- function(mean.subset) {
+  
+  ## initiate ggplot
+  g <- ggplot(mean.subset, aes(x = strain, y = length))
+  
+  ## make violin plot of length for each strain
+  g <- g+ggtitle("Violin Plot of Worm Length")
+  g <- g+theme(plot.title = element_text(size=20, face="bold", vjust=2))
+  g <- g+geom_violin(alpha=0.5, color="gray") + geom_jitter(alpha = 0.5, position = position_jitter(width = 0.1))
+  
+  g
+}
+
+## make body width violin plot
+## TODO: add axis labels with units, fix title
+violinplot.width <- function(mean.subset) {
+  
+  ## initiate ggplot
+  g <- ggplot(mean.subset, aes(x = strain, y = width))
+  
+  ## make violin plot of length for each strain
+  g <- g+ggtitle("Violin Plot of Worm Width")
+  g <- g+theme(plot.title = element_text(size=20, face="bold", vjust=2))
+  g <- g+geom_violin(alpha=0.5, color="gray") + geom_jitter(alpha = 0.5, position = position_jitter(width = 0.1))
+  
+  g
+}
+
+## make area boxplot
+## TODO: add axis labels with units, fix title
+boxplot.area <- function(mean.subset) {
+  
+  #initiate ggplot
+  g <- ggplot(mean.subset, aes(x = strain, y = area))
+  
+  ## make boxplot
+  g <- g+ggtitle("Boxplot of Worm Area")
+  g <- g+geom_boxplot()  
+  
+  g
+}
+
+## make length boxplot
+## TODO: add axis labels with units, fix title
+boxplot.length <- function(mean.subset) {
+  
+  #initiate ggplot
+  g <- ggplot(mean.subset, aes(x = strain, y = length))
+  
+  ## make boxplot
+  g <- g+ggtitle("Boxplot of Worm Length")
+  g <- g+geom_boxplot()  
+  
+  g
+}
+
+## make width boxplot
+## TODO: add axis labels with units, fix title
+boxplot.width <- function(mean.subset) {
+  
+  #initiate ggplot
+  g <- ggplot(mean.subset, aes(x = strain, y = width))
+  
+  ## make boxplot
+  g <- g+ggtitle("Boxplot of Worm Width")
+  g <- g+geom_boxplot()  
+  
+  g
+}
 
 
 
