@@ -6,7 +6,7 @@ main <- function() {
   
   args <- commandArgs(TRUE)
   
-  ##using function to extract column names
+  ##using function to extract column names and change time column from factor to numeric
   parsed.data  <- extract.col(read.table("args[1]"))
   
   ## save data as a file
@@ -25,16 +25,6 @@ main <- function() {
   
   ## use mean size data to make width violin plot (with jittered points)
   violinplot.width(mean.size.data)
-  
-  ## use mean size data to make area box plot
-  boxplot.area(mean.size.data)
-  
-  ## use mean size data to make length box plot
-  boxplot.length(mean.size.data)
-  
-  ## use mean size data to make width box plot
-  boxplot.width(mean.size.data)
-  
   
 }
 
@@ -56,7 +46,7 @@ extract.col <- function(data){
   colnames(new.data) <- c("date", "plate", "time", "strain", "frame", "ID", "number", "goodnumber", "persistance", "area", "speed", "angularspeed", "length", "rellength", "width", "relwidth", "aspect", "relaspect", "midline", "morphwidth", "kink", "bias", "pathlen", "curve", "dir", "loc_x", "loc_y", "vel_x", "vel_y", "orient", "crab")
   
   ##replace time column (factor) with time as numeric
-  new.data$time  <- as.numeric(levels(parsed.data$time))[parsed.data$time]
+  new.data$time  <- as.numeric(levels(new.data$time))[new.data$time]
   
   return(new.data)
   
@@ -108,9 +98,6 @@ plot.speed.time <- function(parsed.data) {
 ## given parsed data make table with mean area, length, and width (from 60-70s) of each worm (including strain)
 mean.size <- function(parsed) {
   
-  ##replace time column (factor) with time as numeric
-  parsed.data$time  <- as.numeric(levels(parsed$time))[parsed$time]
-  
   ## subset parsed data to times between 60 seconds and 70 seconds
   time.subset <- parsed[parsed$time < 70 & parsed$time > 60, ]
   
@@ -120,94 +107,65 @@ mean.size <- function(parsed) {
 }
 
 ## given means, make body area violin plot
-## TODO: add axis labels with units, fix title
 violinplot.area <- function(mean.subset) {
   
-  ## initiate ggplot
-  g <- ggplot(mean.subset, aes(x = strain, y = area))
-  
-  ## make violin plot of area for each strain
-  g <- g+ggtitle("Violin Plot of Worm Area")          ## not sure if title is good or even needed..
-  g <- g+theme(plot.title = element_text(size=20, face="bold", vjust=2))
-  g <- g+geom_violin(alpha=0.5, color="gray") + geom_jitter(alpha = 0.5, position = position_jitter(width = 0.1))
+  g <- ggplot(mean.subset, aes(x = strain, y = area)) + ## plot lengths
+    theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
+          panel.background = element_rect(fill = "white"), ## make the plot background grey
+          axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
+          axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
+          axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
+          axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
+    ggtitle("Violin Plot of Worm Area") +            ## set title
+    labs(x="Strain", y=expression(Area ~ (cm^{2}))) +     ## label the x and y axes 
+    geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
+    geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
+    geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
   
   g
 }
+
+violinplot.area(test.mean.data)
 
 ## given means, make body length violin plot
-## TODO: add axis labels with units, fix title
 violinplot.length <- function(mean.subset) {
   
-  ## initiate ggplot
-  g <- ggplot(mean.subset, aes(x = strain, y = length))
-  
-  ## make violin plot of length for each strain
-  g <- g+ggtitle("Violin Plot of Worm Length")
-  g <- g+theme(plot.title = element_text(size=20, face="bold", vjust=2))
-  g <- g+geom_violin(alpha=0.5, color="gray") + geom_jitter(alpha = 0.5, position = position_jitter(width = 0.1))
+  g <- ggplot(mean.subset, aes(x = strain, y = length)) + ## plot lengths
+    theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
+          panel.background = element_rect(fill = "white"), ## make the plot background grey
+          axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
+          axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
+          axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
+          axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
+    ggtitle("Violin Plot of Worm Length") +            ## set title
+    labs(x="Strain", y="Length (mm)") +     ## label the x and y axes 
+    geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
+    geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
+    geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
   
   g
 }
+
 
 ## make body width violin plot
-## TODO: add axis labels with units, fix title
 violinplot.width <- function(mean.subset) {
   
-  ## initiate ggplot
-  g <- ggplot(mean.subset, aes(x = strain, y = width))
-  
-  ## make violin plot of length for each strain
-  g <- g+ggtitle("Violin Plot of Worm Width")
-  g <- g+theme(plot.title = element_text(size=20, face="bold", vjust=2))
-  g <- g+geom_violin(alpha=0.5, color="gray") + geom_jitter(alpha = 0.5, position = position_jitter(width = 0.1))
-  
-  g
-}
-
-## make area boxplot
-## TODO: add axis labels with units, fix title
-boxplot.area <- function(mean.subset) {
-  
-  #initiate ggplot
-  g <- ggplot(mean.subset, aes(x = strain, y = area))
-  
-  ## make boxplot
-  g <- g+ggtitle("Boxplot of Worm Area")
-  g <- g+geom_boxplot()  
+  ## make plot
+  g <- ggplot(mean.subset, aes(x = strain, y = width)) + ## plot widths
+    theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
+          panel.background = element_rect(fill = "white"), ## make the plot background grey
+          axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
+          axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
+          axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
+          axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
+    ggtitle("Violin Plot of Worm Width") +            ## set title
+    labs(x="Strain", y="Width (mm)") +     ## label the x and y axes 
+    geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
+    geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) + ## overlay jitter plot
+    geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
   
   g
 }
-
-## make length boxplot
-## TODO: add axis labels with units, fix title
-boxplot.length <- function(mean.subset) {
-  
-  #initiate ggplot
-  g <- ggplot(mean.subset, aes(x = strain, y = length))
-  
-  ## make boxplot
-  g <- g+ggtitle("Boxplot of Worm Length")
-  g <- g+geom_boxplot()  
-  
-  g
-}
-
-## make width boxplot
-## TODO: add axis labels with units, fix title
-boxplot.width <- function(mean.subset) {
-  
-  #initiate ggplot
-  g <- ggplot(mean.subset, aes(x = strain, y = width))
-  
-  ## make boxplot
-  g <- g+ggtitle("Boxplot of Worm Width")
-  g <- g+geom_boxplot()  
-  
-  g
-}
-
-
-
 
 
 ##save plot
