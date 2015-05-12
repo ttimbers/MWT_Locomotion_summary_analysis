@@ -125,8 +125,6 @@ violinplot.area <- function(mean.subset) {
   g
 }
 
-violinplot.area(test.mean.data)
-
 ## given means, make body length violin plot
 violinplot.length <- function(mean.subset) {
   
@@ -145,7 +143,6 @@ violinplot.length <- function(mean.subset) {
   
   g
 }
-
 
 ## make body width violin plot
 violinplot.width <- function(mean.subset) {
