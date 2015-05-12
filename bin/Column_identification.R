@@ -17,14 +17,20 @@ main <- function() {
   ## use function to get mean size data for each worm (mean size data from 60 to 70s)
   mean.size.data <- mean.size(parsed.data)
   
-  ## use mean size data to make area violin plot (with jittered points)
+  ## make and save violin plot of worm area with jittered points (using mean size data)
+  pdf("Worm_Area_Plot.pdf")
   violinplot.area(mean.size.data)
+  dev.off()
   
-  ## use mean size data to make length violin plot (with jittered points)
+  ## make and save violin plot of worm length with jittered points (using mean size data)
+  pdf("Worm_Length_Plot.pdf")
   violinplot.length(mean.size.data)
+  dev.off()
   
-  ## use mean size data to make width violin plot (with jittered points)
+  ## make and save violin plot of worm width with jittered points (using mean size data)
+  pdf("Worm_Width_Plot.pdf")
   violinplot.width(mean.size.data)
+  dev.off()
   
 }
 
