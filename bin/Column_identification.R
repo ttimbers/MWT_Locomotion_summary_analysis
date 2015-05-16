@@ -182,12 +182,37 @@ violinplot.width <- function(mean.size) {
 
 ## given parsed data return frame with mean pathlength (from 530 - 590s) for each worm, with ID, strain, and plate
 mean.pathlength <- function(parsed) {
-    
+  
+#   ## nested function: given matrix or df of loc_x and loc_y, return total distance
+#   ## note: this implementation is noticeably slower
+#   pathlength <- function(xy) {
+#     out <- as.matrix(dist(xy))
+#     sum(out[row(out) - col(out) == 1])
+#   }
   
   ## nested function: given matrix or df of loc_x and loc_y, return total distance
+  ## quicker implementation
   pathlength <- function(xy) {
-    out <- as.matrix(dist(xy))
-    sum(out[row(out) - col(out) == 1])
+    
+    previous.x <- xy[1,1]      ## initiate previous x and y as first x and y values
+    previous.y <- xy[1,2]     
+    total <- 0                 ## initiate pathlength as 0
+    
+    for (i in 1:nrow(xy)) { ## use a for loop to go through each row of matrix (corresponding to an x,y point)
+      ## and calculate euclidean distance between each point and the previous point
+      
+      absdiff.x <- abs(xy[i,1] - previous.x)  ## get absolute difference current x position and previous x position
+      absdiff.y <- abs(xy[i,2] - previous.y)  
+      
+      total <- total + sqrt((absdiff.x)^2 + (absdiff.y)^2)  ## calculate diagonal of x and y difference (euclidean)
+      ## and add to total pathlength
+      
+      previous.x <- xy[i,1]  ## set current x as previous x
+      previous.y <- xy[i,2]  ## set current y as previous y
+      
+    }
+    
+    return(total)
   }
   
   ## subset parsed data to times between 530 and 590 seconds
