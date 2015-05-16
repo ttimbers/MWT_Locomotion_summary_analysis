@@ -119,6 +119,8 @@ mean.size <- function(parsed) {
   
   ## aggregate mean area, length, and width with each worm (ID), retaining strain and plate info
   mean.subset <- aggregate(cbind(area, length, width) ~ ID + strain + plate, time.subset, mean)  
+  
+  return(mean.subset)
 
 }
 
@@ -138,7 +140,7 @@ violinplot.area <- function(mean.size) {
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
     geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
   
-  g
+  return(g)
 }
 
 ## given size means, make body length violin plot
@@ -157,7 +159,7 @@ violinplot.length <- function(mean.size) {
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
     geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
   
-  g
+  return(g)
 }
 
 ## make body width violin plot
@@ -177,7 +179,7 @@ violinplot.width <- function(mean.size) {
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) + ## overlay jitter plot
     geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
   
-  g
+  return(g)
 }
 
 ## given parsed data return frame with mean pathlength (from 530 - 590s) for each worm, with ID, strain, and plate
@@ -253,7 +255,7 @@ violinplot.pathlength <- function(mean.pathlength) {
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
     geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
   
-  g
+  return(g)
 }
 
 
