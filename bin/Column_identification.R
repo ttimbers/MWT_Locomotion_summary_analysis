@@ -32,6 +32,14 @@ main <- function() {
   violinplot.width(mean.size.data)
   dev.off()
   
+  ## use function to get pathlength data for each worm (pathlength over 530 to 590s)
+  mean.pathlength.data <- mean.pathlength(parsed.data)
+  
+  ## make and save violin plot of worm pathlength data with jittered points
+  pdf("Worm_Pathlength_Plot.pdf")
+  violinplot.pathlength(mean.pathlength.data)
+  dev.off()
+  
 }
 
 
@@ -99,21 +107,23 @@ plot.speed.time <- function(parsed.data) {
   
   
   
-}
+} 
 
-## given parsed data make table with mean area, length, and width (from 60-70s) of each worm (including strain)
+## given parsed data return table with mean area, length, and width (from 60-70s) of each worm (including strain)
+## Question: ask about order of aggregation (run with plate then withplate <- mean.size(parsed.data), vs
+##                                     run without plate then withoutplate <- mean.size(parsed.data))
 mean.size <- function(parsed) {
   
   ## subset parsed data to times between 60 seconds and 70 seconds
   time.subset <- parsed[parsed$time < 70 & parsed$time > 60, ]
   
-  ## aggregate mean area, length, and width of each worm with each strain
-  mean.subset <- aggregate(cbind(area, length, width) ~ ID + strain, time.subset, mean)
+  ## aggregate mean area, length, and width with each worm (ID), retaining strain and plate info
+  mean.subset <- aggregate(cbind(area, length, width) ~ ID + strain + plate, time.subset, mean)  
 
 }
 
-## given means, make body area violin plot
-violinplot.area <- function(mean.subset) {
+## given size means, make body area violin plot
+violinplot.area <- function(mean.size) {
   
   g <- ggplot(mean.subset, aes(x = strain, y = area)) + ## plot lengths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
@@ -123,7 +133,7 @@ violinplot.area <- function(mean.subset) {
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
           axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
     ggtitle("Violin Plot of Worm Area") +            ## set title
-    labs(x="Strain", y=expression(Area ~ (cm^{2}))) +     ## label the x and y axes 
+    labs(x="Strain", y=expression(Area ~ (mm^{2}))) +     ## label the x and y axes 
     geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
     geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
@@ -131,8 +141,8 @@ violinplot.area <- function(mean.subset) {
   g
 }
 
-## given means, make body length violin plot
-violinplot.length <- function(mean.subset) {
+## given size means, make body length violin plot
+violinplot.length <- function(mean.size) {
   
   g <- ggplot(mean.subset, aes(x = strain, y = length)) + ## plot lengths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
@@ -151,7 +161,7 @@ violinplot.length <- function(mean.subset) {
 }
 
 ## make body width violin plot
-violinplot.width <- function(mean.subset) {
+violinplot.width <- function(mean.size) {
   
   ## make plot
   g <- ggplot(mean.subset, aes(x = strain, y = width)) + ## plot widths
@@ -169,6 +179,58 @@ violinplot.width <- function(mean.subset) {
   
   g
 }
+
+## given parsed data return frame with mean pathlength (from 530 - 590s) for each worm, with ID, strain, and plate
+mean.pathlength <- function(parsed) {
+    
+  
+  ## nested function: given matrix or df of loc_x and loc_y, return total distance
+  pathlength <- function(xy) {
+    out <- as.matrix(dist(xy))
+    sum(out[row(out) - col(out) == 1])
+  }
+  
+  ## subset parsed data to times between 530 and 590 seconds
+  time.subset <- parsed[parsed$time > 530 & parsed$time < 590, ]
+  
+  ## apply pathlength function to x and y locations, which are split by ID, strain, and plate
+  pathlengths.by <- by(time.subset[,c("loc_x","loc_y")], list(time.subset$ID, time.subset$strain, time.subset$plate), pathlength)   
+  
+  ## convert pathlengths.by (a by object) to matrix, omitting NA values for non-existent splits (by function returns pathlength for all possible combinations of ID, strain, and plate - combinations not actually in the dataframe have NA pathlengths)
+  pathlengths <- na.omit(as.matrix(pathlengths.by))
+  
+  ## add pathlength column to data subset with arbitrary values (taken from loc_x)
+  time.subset[,"pathlength"] <- time.subset$loc_x
+  
+  ## aggregate parsed data to be grouped by ID, strain, and plate, with an arbitrary function on pathlengths
+  mean.pathlengths.df <- aggregate(pathlength ~ ID + strain + plate, time.subset, max)
+  
+  ## set arbitrary pathlengths to true pathlengths
+  mean.pathlengths.df[,"pathlength"] <- pathlengths
+  
+  return(mean.pathlengths.df)
+  
+}
+
+## given mean pathlength data make violin plot
+violinplot.pathlength <- function(mean.pathlength) {
+  
+  g <- ggplot(mean.pathlength, aes(x = strain, y = pathlength)) + ## plot pathlengths
+    theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
+          panel.background = element_rect(fill = "white"), ## make the plot background grey
+          axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
+          axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
+          axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
+          axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
+    ggtitle("Violin Plot of Worm Pathlength") +            ## set title
+    labs(x="Strain", y= "Pathlength from 530s to 590s (mm)") +     ## label the x and y axes 
+    geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
+    geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
+    geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
+  
+  g
+}
+
 
 
 ##save plot
