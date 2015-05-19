@@ -203,10 +203,10 @@ mean.pathlength <- function(parsed) {
     for (i in 1:nrow(xy)) { ## use a for loop to go through each row of matrix (corresponding to an x,y point)
       ## and calculate euclidean distance between each point and the previous point
       
-      absdiff.x <- abs(xy[i,1] - previous.x)  ## get absolute difference current x position and previous x position
-      absdiff.y <- abs(xy[i,2] - previous.y)  
+      diff.x <- xy[i,1] - previous.x  ## get difference between current x position and previous x position
+      diff.y <- xy[i,2] - previous.y
       
-      total <- total + sqrt((absdiff.x)^2 + (absdiff.y)^2)  ## calculate diagonal of x and y difference (euclidean)
+      total <- total + sqrt((diff.x)^2 + (diff.y)^2)  ## calculate diagonal of x and y difference (euclidean)
       ## and add to total pathlength
       
       previous.x <- xy[i,1]  ## set current x as previous x
