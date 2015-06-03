@@ -14,6 +14,7 @@
 ## Connect to webdav (so you can backup files)
 ## you will be prompted for your webdav username and password
 mount_webdav -i  $1 /
+## for window users, simply do "cd path of webdav driver"
 
 ## zip all folders all MWT data folders in directory to be analyzed
 ## must be in "data" working directory 
@@ -31,6 +32,9 @@ cp *.zip $2
 ## error: Exactly one filename required
 ##  Use --help to list valid options.
 for zipfolder in *.zip; do java -Xmx$4g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o fDpesSlLwWaAmMkbPcdxyuvorC1234 --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
+## Oops! It did not work. Please find attached previous commands.
+## for zipfolder in *; do java -Xmx8g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o DbsMmexy --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
+
 
 ## move unzipped folder into a new directory (called chore_data)
 mv */ $(mkdir chore_data)
