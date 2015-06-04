@@ -138,7 +138,7 @@ violinplot.area <- function(mean.size) {
     labs(x="Strain", y=expression(Area ~ (mm^{2}))) +     ## label the x and y axes 
     geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
-    geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
+    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
   
   return(g)
 }
@@ -157,7 +157,7 @@ violinplot.length <- function(mean.size) {
     labs(x="Strain", y="Length (mm)") +     ## label the x and y axes 
     geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
-    geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
+    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
   
   return(g)
 }
@@ -177,7 +177,7 @@ violinplot.width <- function(mean.size) {
     labs(x="Strain", y="Width (mm)") +     ## label the x and y axes 
     geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) + ## overlay jitter plot
-    geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
+    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
   
   return(g)
 }
@@ -220,6 +220,7 @@ mean.pathlength <- function(parsed) {
   ## subset parsed data to times between 530 and 590 seconds
   time.subset <- parsed[parsed$time > 530 & parsed$time < 590, ]
   
+  ## aggregate data with pathlength function, grouping by ID, strain, and plate
   pathlength.subset <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
                 pathlength = pathlength(cbind(loc_x,loc_y)))
   
@@ -241,7 +242,7 @@ violinplot.pathlength <- function(mean.pathlength) {
     labs(x="Strain", y= "Pathlength from 530s to 590s (mm)") +     ## label the x and y axes 
     geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
-    geom_errorbar(stat = "hline", yintercept = "mean", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
+    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
   
   return(g)
 }
