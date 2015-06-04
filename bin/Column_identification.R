@@ -186,7 +186,7 @@ violinplot.width <- function(mean.size) {
 mean.pathlength <- function(parsed) {
   
 #   ## nested function: given matrix or df of loc_x and loc_y, return total distance
-#   ## note: this implementation is noticeably slower
+#   ## note: this implementation is noticeably slower, uses base dist function to find distance between every point, not just consecutive points
 #   pathlength <- function(xy) {
 #     out <- as.matrix(dist(xy))
 #     sum(out[row(out) - col(out) == 1])
@@ -220,22 +220,10 @@ mean.pathlength <- function(parsed) {
   ## subset parsed data to times between 530 and 590 seconds
   time.subset <- parsed[parsed$time > 530 & parsed$time < 590, ]
   
-  ## apply pathlength function to x and y locations, which are split by ID, strain, and plate
-  pathlengths.by <- by(time.subset[,c("loc_x","loc_y")], list(time.subset$ID, time.subset$strain, time.subset$plate), pathlength)   
+  pathlength.subset <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
+                pathlength = pathlength(cbind(loc_x,loc_y)))
   
-  ## convert pathlengths.by (a by object) to matrix, omitting NA values for non-existent splits (by function returns pathlength for all possible combinations of ID, strain, and plate - combinations not actually in the dataframe have NA pathlengths)
-  pathlengths <- na.omit(as.matrix(pathlengths.by))
-  
-  ## add pathlength column to data subset with arbitrary values (taken from loc_x)
-  time.subset[,"pathlength"] <- time.subset$loc_x
-  
-  ## aggregate parsed data to be grouped by ID, strain, and plate, with an arbitrary function on pathlengths
-  mean.pathlengths.df <- aggregate(pathlength ~ ID + strain + plate, time.subset, max)
-  
-  ## set arbitrary pathlengths to true pathlengths
-  mean.pathlengths.df[,"pathlength"] <- pathlengths
-  
-  return(mean.pathlengths.df)
+  return(pathlength.subset)
   
 }
 
