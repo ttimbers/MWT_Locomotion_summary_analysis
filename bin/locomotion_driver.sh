@@ -31,10 +31,7 @@ cp *.zip $2
 ## call choreography to analyze the MWT data (each .zip in the folder data)
 ## error: Exactly one filename required
 ##  Use --help to list valid options.
-for zipfolder in *.zip; do java -Xmx$4g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o fDpesSlLwWaAmMkbPcdxyuvorC1234 --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
-## Oops! It did not work. Please find attached previous commands.
-## for zipfolder in *; do java -Xmx8g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o DbsMmexy --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
-
+for zipfolder in *.zip; do java -Xmx$4g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o fDpesSlLwWaAmMkbPcdxyuvor1234 --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
 
 ## move unzipped folder into a new directory (called chore_data)
 mv */ $(mkdir chore_data)
@@ -49,8 +46,6 @@ cd ../..
 ## Use regular expressions in R to parse apart the information in the filepath
 ## so we can get data, plate ID and strain as delimited columns
 ## call R script with the command line using an argument for the filename we want to parse
-   rscript bin/Column_identification_command.R data/chore_data/merged.file 
-
-## create figures
-
-## create stats
+## After data is parsed, figures are plotted and stats are done and saved in results 
+## directory
+rscript bin/Column_identification.R data/chore_data/merged.file 
