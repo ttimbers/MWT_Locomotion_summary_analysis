@@ -105,7 +105,7 @@ plot.speed.time <- function(dataframe) {
 ## given parsed data return df with mean area, length, and width (from 60-70s) of each worm (including strain)
 ## Question: ask about order of aggregation (run with plate then withplate <- mean.size(parsed.data), vs
 ##                                     run without plate then withoutplate <- mean.size(parsed.data))
-mean.size <- function(parsed) {
+mean.size <- function(dataframe) {
   
   ## subset parsed data to times between 60 seconds and 70 seconds
   time.subset <- parsed[parsed$time < 70 & parsed$time > 60, ]
@@ -179,7 +179,7 @@ violinplot.width <- function(mean.size.output) {
 }
 
 ## given parsed data return data frame with mean pathlength (from 530 - 590s) for each worm, with ID, strain, and plate
-mean.pathlength <- function(parsed) {
+mean.pathlength <- function(dataframe) {
   
 #   ## nested function: given matrix or df of loc_x and loc_y, return total distance
 #   ## note: this implementation is noticeably slower, uses base dist function to find distance between every point, not just consecutive points
@@ -217,15 +217,15 @@ mean.pathlength <- function(parsed) {
   time.subset <- parsed[parsed$time > 530 & parsed$time < 590, ]
   
   ## aggregate data with pathlength function, grouping by ID, strain, and plate
-  pathlength.subset <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
+  pathlength.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
                 pathlength = pathlength(cbind(loc_x,loc_y)))
   
-  return(pathlength.subset)
+  return(pathlength.output)
   
 }
 
 ## given mean pathlength data make violin plot
-violinplot.pathlength <- function(mean.pathlength) {
+violinplot.pathlength <- function(mean.pathlength.output) {
   
   g <- ggplot(mean.pathlength, aes(x = strain, y = pathlength)) + ## plot pathlengths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
