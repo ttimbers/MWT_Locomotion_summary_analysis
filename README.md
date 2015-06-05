@@ -73,5 +73,4 @@ devoted to the process (recommended as much as you have). See example below:
 
 `bash bin/locomotion_driver.sh https://webdav.server/location folder_to_backup_to 4`
 
-#### This code is still a work in progress. More instructions to come as code is developed 
-further.
+#### This code is still a work in progress. More instructions to come as code is developed further.
