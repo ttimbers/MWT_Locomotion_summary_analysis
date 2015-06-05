@@ -109,7 +109,7 @@ plot.speed.time <- function(parsed.data) {
   
 } 
 
-## given parsed data return table with mean area, length, and width (from 60-70s) of each worm (including strain)
+## given parsed data return df with mean area, length, and width (from 60-70s) of each worm (including strain)
 ## Question: ask about order of aggregation (run with plate then withplate <- mean.size(parsed.data), vs
 ##                                     run without plate then withoutplate <- mean.size(parsed.data))
 mean.size <- function(parsed) {
@@ -182,7 +182,7 @@ violinplot.width <- function(mean.size) {
   return(g)
 }
 
-## given parsed data return frame with mean pathlength (from 530 - 590s) for each worm, with ID, strain, and plate
+## given parsed data return data frame with mean pathlength (from 530 - 590s) for each worm, with ID, strain, and plate
 mean.pathlength <- function(parsed) {
   
 #   ## nested function: given matrix or df of loc_x and loc_y, return total distance
@@ -249,65 +249,4 @@ violinplot.pathlength <- function(mean.pathlength) {
 
 
 
-##save plot
-pdf(file="/Users/michelleroux/Documents/Jesse/2015-01-19/Speed_decay.pdf", width=5, height=5)
-plot(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[3])] ,plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[3])], pch=18, xlab="Time(s)",ylab="Speed(mm/s)", ylim = c(0,1.4))
-points(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[2])] ,plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[2])],col=2,pch=18)
-points(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[1])] ,plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[1])],col=4,pch=18)
-points(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[2])] ,plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[4])],col=5,pch=18)
-points(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[1])] ,plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[5])],col=8,pch=18)
-##plot the error bars (standard error)
-segments(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[3])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[3])]-plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[3])],plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[3])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[3])]+plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[3])])
-segments(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[2])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[2])]-plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[2])],plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[2])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[2])]+plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[2])], col=2)
-segments(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[1])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[1])]-plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[1])],plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[1])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[1])]+plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[1])], col=4)
-segments(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[4])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[4])]-plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[4])],plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[4])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[4])]+plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[4])], col=5)
-segments(plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[5])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[5])]-plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[5])],plate.data.tint.agg$time[which(plate.data.tint.agg$strain==strains[5])],plate.data.tint.agg$mean.speed[which(plate.data.tint.agg$strain==strains[5])]+plate.data.tint.agg$se[which(plate.data.tint.agg$strain==strains[5])], col=8)
-##plot the legend
-legend("topright",bty="n",y.intersp=1,c(as.character(strains[1]),as.character(strains[2]),as.character(strains[3]), as.character(strains[4]), as.character(strains[5])),col=c(1,2,4,5,8),pch=(18))
-dev.off()
 
-
-
-##summarize body area
-df.area <- ddply(plate.data.tint,.(strain,time,plate),summarise,area=mean(area))
-df.area <- df.area[which(df.area$time==40),]
-df.area.agg <- ddply(df.area,.(strain, time),summarise,N=length(area),mean.area=mean(area),sd=sd(area), se=sd/sqrt(N))
-##look at the plot
-boxplot(df.area$area~df.area$strain, xlab="Strain",ylab="Body size (mm^2)", ylim = c(0,11))
-##save the plot 
-pdf("/Users/michelleroux/Documents/Jesse/2015-01-19/body_size_area.pdf", width=6, height=6)
-boxplot(df.area$area~df.area$strain, xlab="Strain",ylab="Body size (mm^2)", ylim = c(0,11))
-dev.off()
-
-##summarize length
-df.length <- ddply(plate.data.tint,.(strain,time,plate),summarise,length=mean(midline))
-df.length <- df.length[which(df.length$time==40),]
-df.length.agg <- ddply(df.length,.(strain, time),summarise,N=length(length),mean.length=mean(length),sd=sd(length), se=sd/sqrt(N))
-
-##plot the data
-boxplot(df.length$length~df.length$strain, xlab="Strain",ylab="Body length (mm)", ylim = c(0,9.5))
-##save the data
-pdf("/Users/michelleroux/Documents/Jesse/2015-01-19/body_size_length.pdf", width=6, height=6)
-boxplot(df.length$length~df.length$strain, xlab="Strain",ylab="Body length (mm)", ylim = c(0,9.5))
-dev.off()
-
-##summarize width
-df.width <- ddply(plate.data.tint,.(strain,time,plate),summarise,width=mean(morphwidth))
-df.width <- df.width[which(df.width$time==40),]
-df.width.agg <- ddply(df.width,.(strain, time),summarise,N=length(width),mean.width=mean(width),sd=sd(width), se=sd/sqrt(N))
-
-##plot the data
-boxplot(df.width$width~df.width$strain, xlab="Strain",ylab="Body width (mm)")
-##save the data
-pdf("/Users/michelleroux/Documents/Jesse/2015-01-19/body_size_width.pdf", width=6, height=6)
-boxplot(df.width$width~df.width$strain, xlab="Strain",ylab="Body width (mm)")
-dev.off()
-
-pdf("/Users/michelleroux/Documents/Jesse/2015-01-19/body_size_all_measures.pdf", width=6, height=12)
-par(mfrow=c(3,1))
-boxplot(df.area$area~df.area$strain, xlab="Strain",ylab="Body size (mm^2)", ylim = c(0,11))
-boxplot(df.length$length~df.length$strain, xlab="Strain",ylab="Body length (mm)", ylim = c(0,9.5))
-boxplot(df.width$width~df.width$strain, xlab="Strain",ylab="Body width (mm)")
-dev.off()
-
-main()
