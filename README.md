@@ -67,9 +67,9 @@ have it accesible as a shell script in the executable path named `Chore`:
 
 * Call `locomotion_driver.sh` from the `Bash Shell`
 
-* `locomotion_driver.sh` requires the following arguments from the user: webdav server URL,
-path on webdav where `.zip` folders should be saved and the gigabytes of memory to be 
-devoted to the process (recommended as much as you have). See example below:
+* `locomotion_driver.sh` requires the following arguments from the user: (1) webdav server 
+URL, (2) path on webdav where `.zip` folders should be saved, and (3) the gigabytes of 
+memory to be devoted to the process (recommended as much as you have). See example below:
 
 `bash bin/locomotion_driver.sh https://webdav.server/location folder_to_backup_to 4`
 
