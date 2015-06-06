@@ -55,7 +55,7 @@ have it accesible as a shell script in the executable path named "Chore":
 	~~~
 	
 3. Install the Multi-worm Tracker Analysis software via Homebrew to install Chore.jar and
-have it accesible as a shell script in the executable path named `Chore`:
+have it accesible as a shell script in the executable path named "Chore":
 
 
 	`brew install homebrew/science/multi-worm-tracker`
