@@ -100,15 +100,13 @@ plot.speed.time <- function(dataframe) {
   
   ##save plot
   ggsave(file="results/speedVtime.pdf", g, height = 3, width = 5)
-} 
+}
 
-## given parsed data return df with mean area, length, and width (from 60-70s) of each worm (including strain)
-## Question: ask about order of aggregation (run with plate then withplate <- mean.size(parsed.data), vs
-##                                     run without plate then withoutplate <- mean.size(parsed.data))
+## given parsed data return df with mean area, length, and width (from 60-70s) of each worm (including strain)                                     run without plate then withoutplate <- mean.size(parsed.data))
 mean.size <- function(dataframe) {
   
   ## subset parsed data to times between 60 seconds and 70 seconds
-  time.subset <- parsed[parsed$time < 70 & parsed$time > 60, ]
+  time.subset <- dataframe[dataframe$time < 70 & dataframe$time > 60, ]
   
   ## aggregate mean area, length, and width with each worm (ID), retaining strain and plate info
   mean.subset <- aggregate(cbind(area, length, width) ~ ID + strain + plate, time.subset, mean)  
@@ -178,43 +176,41 @@ violinplot.width <- function(mean.size.output) {
   ggsave(file="results/violinplot_width.pdf", g, height = 3, width = 5)
 }
 
-## given parsed data return data frame with mean pathlength (from 530 - 590s) for each worm, with ID, strain, and plate
-mean.pathlength <- function(dataframe) {
+## Given matrix or df of loc_x and loc_y, return total distance
+## quicker implementation
+pathlength <- function(xy) {
   
-#   ## nested function: given matrix or df of loc_x and loc_y, return total distance
-#   ## note: this implementation is noticeably slower, uses base dist function to find distance between every point, not just consecutive points
+  previous.x <- xy[1,1]      ## initiate previous x and y as first x and y values
+  previous.y <- xy[1,2]     
+  total <- 0                 ## initiate pathlength as 0
+  
+  for (i in 1:nrow(xy)) { ## use a for loop to go through each row of matrix (corresponding to an x,y point)
+    ## and calculate euclidean distance between each point and the previous point
+    
+    diff.x <- xy[i,1] - previous.x  ## get difference between current x position and previous x position
+    diff.y <- xy[i,2] - previous.y
+    
+    total <- total + sqrt((diff.x)^2 + (diff.y)^2)  ## calculate diagonal of x and y difference (euclidean)
+    ## and add to total pathlength
+    
+    previous.x <- xy[i,1]  ## set current x as previous x
+    previous.y <- xy[i,2]  ## set current y as previous y
+    
+  }
+  return(total)
+}
+
+## slower implementation (uses base dist function to find distance between every point, not just consecutive points)
 #   pathlength <- function(xy) {
 #     out <- as.matrix(dist(xy))
 #     sum(out[row(out) - col(out) == 1])
 #   }
-  
-  ## nested function: given matrix or df of loc_x and loc_y, return total distance
-  ## quicker implementation
-  pathlength <- function(xy) {
-    
-    previous.x <- xy[1,1]      ## initiate previous x and y as first x and y values
-    previous.y <- xy[1,2]     
-    total <- 0                 ## initiate pathlength as 0
-    
-    for (i in 1:nrow(xy)) { ## use a for loop to go through each row of matrix (corresponding to an x,y point)
-      ## and calculate euclidean distance between each point and the previous point
-      
-      diff.x <- xy[i,1] - previous.x  ## get difference between current x position and previous x position
-      diff.y <- xy[i,2] - previous.y
-      
-      total <- total + sqrt((diff.x)^2 + (diff.y)^2)  ## calculate diagonal of x and y difference (euclidean)
-      ## and add to total pathlength
-      
-      previous.x <- xy[i,1]  ## set current x as previous x
-      previous.y <- xy[i,2]  ## set current y as previous y
-      
-    }
-    
-    return(total)
-  }
+
+## given parsed data return data frame with mean pathlength (from 530 - 590s) for each worm, with ID, strain, and plate
+mean.pathlength <- function(dataframe) {
   
   ## subset parsed data to times between 530 and 590 seconds
-  time.subset <- parsed[parsed$time > 530 & parsed$time < 590, ]
+  time.subset <- dataframe[dataframe$time > 530 & dataframe$time < 590, ]
   
   ## aggregate data with pathlength function, grouping by ID, strain, and plate
   pathlength.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
@@ -227,7 +223,7 @@ mean.pathlength <- function(dataframe) {
 ## given mean pathlength data make violin plot
 violinplot.pathlength <- function(mean.pathlength.output) {
   
-  g <- ggplot(mean.pathlength, aes(x = strain, y = pathlength)) + ## plot pathlengths
+  g <- ggplot(mean.pathlength.output, aes(x = strain, y = pathlength)) + ## plot pathlengths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
           panel.background = element_rect(fill = "white"), ## make the plot background grey
           axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
@@ -242,6 +238,7 @@ violinplot.pathlength <- function(mean.pathlength.output) {
   
   ##save plot
   ggsave(file="results/violinplot_pathlength.pdf", g, height = 3, width = 5)
+
 }
 
 main()
