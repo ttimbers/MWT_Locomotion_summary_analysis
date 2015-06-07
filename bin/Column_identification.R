@@ -241,4 +241,78 @@ violinplot.pathlength <- function(mean.pathlength.output) {
 
 }
 
+## given dataframe with x locations, adjust initial x to 0 and following x's accordingly
+adjust.x <- function(df.x) {
+  df.x <- df.x - df.x[1]      ## subtract initial x from every x in dataframe
+  return(df.x)
+}
+
+## given dataframe with y locations, adjust initial y to 0 and following y's accordingly
+adjust.y <- function(df.y) {
+  df.y <- df.y - df.y[1]     ## subtract initial y from every y in dataframe
+  return(df.y)
+}
+
+## given parsed data return dataframe with adjusted x and y locations of each worm from 530 to 590s
+## grouped by ID, strain, and plate.
+## The x and y locations are adjusted for each worm so that it's initial position is (0,0)
+## and following positions are adjusted accordingly
+adjusted.path <- function(dataframe) {
+  
+  ## subset parsed data to times between 530 and 590 seconds
+  time.subset <- dataframe[dataframe$time > 530 & dataframe$time < 590, ]
+  
+  adjusted.path.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
+        adj_x = adjust.x(loc_x),
+        adj_y = adjust.y(loc_y))
+  
+  return(adjusted.path.output)
+}
+
+t <- adjusted.path(parsed.data)
+
+
+t.subset <- t[(t$strain == "n2" & t$ID > 19 & t$ID < 30),]
+
+t.subset <- t[(t$strain == "n2" & t$ID == 20) ,]
+t.subset$ID <- as.factor(t.subset$ID)
+
+ggplot(data=t.subset, aes(x=adj_x, y=adj_y, group=ID, colour=ID)) +
+  geom_line()
+
+
+actualpos <- parsed.data[(parsed.data$strain == "n2" & parsed.data$ID == 20),]
+actualpos$ID <- as.factor(actualpos$ID)
+ggplot(actualpos, aes(x=loc_x, y=loc_y, group=ID, colour=ID)) +
+  geom_line()
+
+justadjpos <- cbind(t.subset$adj_x, t.subset$adj_y)
+write.table(justadjpos, file="20 adj positions", sep=",")
+
+justpos <- cbind(actualpos$loc_x, actualpos$loc_y)
+write.table(justpos, file="20 positions", sep=",")
+
+
+
+
+
+t.subset1 <- t[t$strain == "tm4182",]
+t.subset1$ID <- as.factor(t.subset1$ID)
+
+ggplot(data=t.subset1, aes(x=adj_x, y=adj_y, group=ID, colour=ID)) +
+  geom_line()
+
+t1$wat <- interaction(t1$strain,t1$ID)
+
+ggplot(data=t1, aes(x=wat, y=adj_y, group=ID, colour=ID)) +
+  geom_line(aes(group=interaction(ID,strain)))
+
+
+ggplot(data=t, aes(x=adj_x, y=adj_y, group=ID)) +
+  geom_line()
+
+
+
+
+
 main()
