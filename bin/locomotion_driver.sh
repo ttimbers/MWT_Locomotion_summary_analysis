@@ -7,8 +7,7 @@
 ##		$1: webdav server URL 
 ##		$2: path on webdav where .zip folders should be saved (including where it is 
 ##			mounted on your computer (e.g /path_on_webdav)
-##		$3: path to chore.jar (offline analys program Choreography)
-##		$4: gigabytes of memory to be used to run Choreography (dependent upon
+##		$3: gigabytes of memory to be used to run Choreography (dependent upon
 ##			the machine you are using
 
 ## Connect to webdav (so you can backup files)
@@ -31,7 +30,7 @@ cp *.zip $2
 ## call choreography to analyze the MWT data (each .zip in the folder data)
 ## error: Exactly one filename required
 ##  Use --help to list valid options.
-for zipfolder in *.zip; do java -Xmx$4g -jar $3 --shadowless -p 0.027 -M 2 -t 20 -S -N all -o fDpesSlLwWaAmMkbPcdxyuvor1234 --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
+for zipfolder in *.zip; do Chore -Xmx$3g --shadowless -p 0.027 -M 2 -t 20 -S -N all -o fDpesSlLwWaAmMkbPcdxyuvor1234 --plugin Reoutline::despike --plugin Respine --plugin MeasureReversal::all $zipfolder; done
 
 ## move unzipped folder into a new directory (called chore_data)
 mv */ $(mkdir chore_data)

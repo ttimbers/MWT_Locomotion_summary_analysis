@@ -9,6 +9,7 @@ main <- function() {
   
   require(ggplot2)
   require(plyr)
+  require(stringr)
   
   ##using function to extract column names and change time column from factor to numeric
   parsed.data  <- extract.col(read.table(file))
@@ -43,7 +44,6 @@ main <- function() {
 
 extract.col <- function(data){
   ## split up column V1 into date, plate, time and strain 
-  library(stringr)
   date <- str_extract(data$V1, "[0-9]{8}")
   plate <- str_extract(data$V1, "[0-9]{8}_[0-9]{6}")
   time <- str_extract(data$V1, "[0-9]+[.][0-9]+")
