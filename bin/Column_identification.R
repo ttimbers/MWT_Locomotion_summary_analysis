@@ -262,57 +262,26 @@ adjusted.path <- function(dataframe) {
   ## subset parsed data to times between 530 and 590 seconds
   time.subset <- dataframe[dataframe$time > 530 & dataframe$time < 590, ]
   
-  adjusted.path.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
+  adjusted.path.output <- ddply(time.subset, cbind("ID", "strain", "plate"), transform,
         adj_x = adjust.x(loc_x),
         adj_y = adjust.y(loc_y))
   
   return(adjusted.path.output)
 }
 
-t <- adjusted.path(parsed.data)
+adjusted.path.output <- adjusted.path(parsed.data)
 
+adjusted.path.output.n2 <- adjusted.path.output[adjusted.path.output$strain=="n2",]
+adjusted.path.output.n2$ID <- as.factor(adjusted.path.output.n2$ID)
+ggplot(data=adjusted.path.output.n2, aes(x=adj_x, y=adj_y, group=ID, colour=ID)) +
+  geom_path(lineend="butt")
 
-t.subset <- t[(t$strain == "n2" & t$ID > 19 & t$ID < 30),]
+adjusted.path.output.tm4182 <- adjusted.path.output[adjusted.path.output$strain == "tm4182",]
+adjusted.path.output.tm4182$ID <- as.factor(adjusted.path.output.tm4182$ID)
+ggplot(data=adjusted.path.output.tm4182, aes(x=adj_x, y=adj_y, group=ID, colour=ID)) +
+  geom_path()
 
-t.subset <- t[(t$strain == "n2" & t$ID == 20) ,]
-t.subset$ID <- as.factor(t.subset$ID)
-
-ggplot(data=t.subset, aes(x=adj_x, y=adj_y, group=ID, colour=ID)) +
-  geom_line()
-
-
-actualpos <- parsed.data[(parsed.data$strain == "n2" & parsed.data$ID == 20),]
-actualpos$ID <- as.factor(actualpos$ID)
-ggplot(actualpos, aes(x=loc_x, y=loc_y, group=ID, colour=ID)) +
-  geom_line()
-
-justadjpos <- cbind(t.subset$adj_x, t.subset$adj_y)
-write.table(justadjpos, file="20 adj positions", sep=",")
-
-justpos <- cbind(actualpos$loc_x, actualpos$loc_y)
-write.table(justpos, file="20 positions", sep=",")
-
-
-
-
-
-t.subset1 <- t[t$strain == "tm4182",]
-t.subset1$ID <- as.factor(t.subset1$ID)
-
-ggplot(data=t.subset1, aes(x=adj_x, y=adj_y, group=ID, colour=ID)) +
-  geom_line()
-
-t1$wat <- interaction(t1$strain,t1$ID)
-
-ggplot(data=t1, aes(x=wat, y=adj_y, group=ID, colour=ID)) +
-  geom_line(aes(group=interaction(ID,strain)))
-
-
-ggplot(data=t, aes(x=adj_x, y=adj_y, group=ID)) +
-  geom_line()
-
-
-
+ggplot
 
 
 main()
