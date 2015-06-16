@@ -10,6 +10,7 @@ main <- function() {
   require(ggplot2)
   require(plyr)
   require(stringr)
+  require(gridExtra)
   
   ##using function to extract column names and change time column from factor to numeric
   parsed.data  <- extract.col(read.table(file))
@@ -27,7 +28,7 @@ main <- function() {
   violinplot.area(mean.size.data)
   
   ## make and save violin plot of worm length with jittered points (using mean size data)
-  violinplot.length(mean.size.data)
+   violinplot.length(mean.size.data)
   
   ## make and save violin plot of worm width with jittered points (using mean size data)
   violinplot.width(mean.size.data)
@@ -102,7 +103,7 @@ plot.speed.time <- function(dataframe) {
   ggsave(file="results/speedVtime.pdf", g, height = 3, width = 5)
 }
 
-## given parsed data return df with mean area, length, and width (from 60-70s) of each worm (including strain)                                     run without plate then withoutplate <- mean.size(parsed.data))
+## given parsed data return df with mean area, length, and width (from 60-70s) of each worm (including strain)
 mean.size <- function(dataframe) {
   
   ## subset parsed data to times between 60 seconds and 70 seconds
@@ -120,7 +121,7 @@ violinplot.area <- function(mean.size.output) {
   
   g <- ggplot(mean.size.output, aes(x = strain, y = area)) + ## plot lengths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
-          panel.background = element_rect(fill = "white"), ## make the plot background grey
+          panel.background = element_rect(fill = "white"), ## make the plot background white
           axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
@@ -129,7 +130,7 @@ violinplot.area <- function(mean.size.output) {
     labs(x="Strain", y=expression(Area ~ (mm^{2}))) +     ## label the x and y axes 
     geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
-    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
+    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay median line
   
   ##save plot
   ggsave(file="results/violinplot_area.pdf", g, height = 3, width = 5)
@@ -140,7 +141,7 @@ violinplot.length <- function(mean.size.output) {
   
   g <- ggplot(mean.size.output, aes(x = strain, y = length)) + ## plot lengths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
-          panel.background = element_rect(fill = "white"), ## make the plot background grey
+          panel.background = element_rect(fill = "white"), ## make the plot background white
           axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
@@ -149,7 +150,7 @@ violinplot.length <- function(mean.size.output) {
     labs(x="Strain", y="Length (mm)") +     ## label the x and y axes 
     geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
-    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
+    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay median line
   
   ##save plot
   ggsave(file="results/violinplot_length.pdf", g, height = 3, width = 5)
@@ -161,7 +162,7 @@ violinplot.width <- function(mean.size.output) {
   ## make plot
   g <- ggplot(mean.size.output, aes(x = strain, y = width)) + ## plot widths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
-          panel.background = element_rect(fill = "white"), ## make the plot background grey
+          panel.background = element_rect(fill = "white"), ## make the plot background white
           axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
@@ -170,7 +171,7 @@ violinplot.width <- function(mean.size.output) {
     labs(x="Strain", y="Width (mm)") +     ## label the x and y axes 
     geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) + ## overlay jitter plot
-    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
+    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay median line
   
   ##save plot
   ggsave(file="results/violinplot_width.pdf", g, height = 3, width = 5)
@@ -225,7 +226,7 @@ violinplot.pathlength <- function(mean.pathlength.output) {
   
   g <- ggplot(mean.pathlength.output, aes(x = strain, y = pathlength)) + ## plot pathlengths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
-          panel.background = element_rect(fill = "white"), ## make the plot background grey
+          panel.background = element_rect(fill = "white"), ## make the plot background white
           axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
@@ -234,7 +235,7 @@ violinplot.pathlength <- function(mean.pathlength.output) {
     labs(x="Strain", y= "Pathlength from 530s to 590s (mm)") +     ## label the x and y axes 
     geom_violin(alpha=0.5, color="gray", fill='#F0FFFF') +  ## overlay violin plot
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3) +  ## overlay jitter plot
-    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay mean line
+    geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay median line
   
   ##save plot
   ggsave(file="results/violinplot_pathlength.pdf", g, height = 3, width = 5)
@@ -262,26 +263,88 @@ adjusted.path <- function(dataframe) {
   ## subset parsed data to times between 530 and 590 seconds
   time.subset <- dataframe[dataframe$time > 530 & dataframe$time < 590, ]
   
-  adjusted.path.output <- ddply(time.subset, cbind("ID", "strain", "plate"), transform,
+  adjusted.path.output <- ddply(time.subset, cbind("ID", "plate", "strain"), transform,
         adj_x = adjust.x(loc_x),
         adj_y = adjust.y(loc_y))
   
   return(adjusted.path.output)
 }
 
-adjusted.path.output <- adjusted.path(parsed.data)
 
-adjusted.path.output.n2 <- adjusted.path.output[adjusted.path.output$strain=="n2",]
+
+
+## given parsed data with adjusted x and y locations, make plots for each strain, 
+# adjusted.path.output <- 
+  
+# strains <- unique(adjusted.path.output$strain) # get list of strains
+# if ("n2" %in% strains) {                       # if strains includes n2, remove and make first so it is the first plot
+#   strains <- strains[strains != "n2"]          # remove n2
+#   append("n2", as.character(strains))          # readd at start
+# }
+
+for (i in 1:length(strains)) {
+  toPlot <- adjusted.path.output[adjusted.path.output$strain == strains[i],]
+  assign(paste("plot", i, sep=""), plot.path(toPlot))
+}
+
+
+if (length(strains) %% 2 == 1) {           # check if number of strains is divisible by 2
+  rows.to.arrange <- length(strains) + 1   #if not add one to number of rows for output file
+} else {
+  rows.to.arrange <- length(strains)        # if even leave as is
+}
+
+
+call(grid.arrange, plot1, plot2, ncol=2, nrow = rows.to.arrange / 2)
+
+grid.arrange(plot1, plot2, ncol=2, nrow = rows.to.arrange / 2)
+
+
+## given dataframe with adjusted x and y locations of worm, plot worm path from (0,0) for each worm, on separate plots for 
+## different strains 
+plot.path <- function(toPlot) {
+  
+  ggplot(data=toPlot, aes(x=adj_x, y=adj_y)) + 
+    theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
+          panel.background = element_rect(fill = "white"), ## make the plot background white
+          axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
+          axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
+          axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
+          axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
+    ## MAYBE USE REGEX TO CAPITALIZE STRAIN NAME?
+    ggtitle(paste(unique(toPlot$strain), "Path Plot")) +  ## set title
+    labs(x="Relative x position (mm)", y="Relative y position (mm)") +     ## label the x and y axes 
+    coord_cartesian(xlim = c(-10, 10), ylim=c(-10, 10)) +   ## limit the x and y axes ranges to a constant
+    geom_point(size = 1) ## overlay points that show worm path
+  
+}
+
+
+
+
+
+
+adjusted.path.output <- adjusted.path(parsed)
+
+adjusted.path.output.n2 <- adjusted.path.output[adjusted.path.output$strain=="n2" ,]
+
 adjusted.path.output.n2$ID <- as.factor(adjusted.path.output.n2$ID)
-ggplot(data=adjusted.path.output.n2, aes(x=adj_x, y=adj_y, group=ID, colour=ID)) +
-  geom_path(lineend="butt")
 
-adjusted.path.output.tm4182 <- adjusted.path.output[adjusted.path.output$strain == "tm4182",]
-adjusted.path.output.tm4182$ID <- as.factor(adjusted.path.output.tm4182$ID)
-ggplot(data=adjusted.path.output.tm4182, aes(x=adj_x, y=adj_y, group=ID, colour=ID)) +
-  geom_path()
 
-ggplot
+strain.Name <- toString(unique(adjusted.path.output.n2$strain))
+
+ggplot(data=adjusted.path.output.n2, aes(x=adj_x, y=adj_y)) + 
+  theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
+        panel.background = element_rect(fill = "white"), ## make the plot background white
+        axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
+        axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
+        axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
+        axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
+  ## MAYBE USE REGEX TO CAPITALIZE STRAIN NAME?
+  ggtitle(paste(unique(adjusted.path.output.n2$strain), "Path Plot")) +  ## set title
+  labs(x="Relative x position (mm)", y="Relative y position (mm)") +     ## label the x and y axes 
+  coord_cartesian(xlim = c(-10, 10), ylim=c(-10, 10)) +   ## limit the x and y axes ranges to a constant
+  geom_point(size = 1) ## overlay points that show worm path
 
 
 main()
