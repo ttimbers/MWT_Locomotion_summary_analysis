@@ -47,7 +47,8 @@ extract.col <- function(data){
   ## split up column V1 into date, plate, time and strain 
   date <- str_extract(data$V1, "[0-9]{8}")
   plate <- str_extract(data$V1, "[0-9]{8}_[0-9]{6}")
-  time <- str_extract(data$V1, "[0-9]+[.][0-9]+")
+  time <- str_extract(data$V1, ":[0-9]+[.][0-9]+")
+  time <- sub(":", "", time)
   strain <- str_extract(data$V1,"[A-Za-z]+[-]?[0-9]+")
   
   ## combine new columns with merged file
@@ -118,6 +119,12 @@ mean.size <- function(dataframe) {
 
 ## given size means, make body area violin plot
 violinplot.area <- function(mean.size.output) {
+  
+  unique(mean.size.data$strain)
+  nrow(mean.size.data[mean.size.data$strain == "N2",])
+  nrow(mean.size.data[mean.size.data$strain == "gk1040",])
+  nrow(mean.size.data[mean.size.data$strain == "RAB-28",])
+  nrow(mean.size.data[mean.size.data$strain == "MX2313",])
   
   g <- ggplot(mean.size.output, aes(x = strain, y = area)) + ## plot lengths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
