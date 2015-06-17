@@ -299,12 +299,18 @@ plot.path <- function(toPlot) {
 plot.strains <- function(adjusted.path.output) {
  
   strains <- unique(adjusted.path.output$strain) # get list of strains
-#   
-#   ## if strains includes n2, remove and make first so it is the first plot
-#   if ("n2" %in% strains ) {                     
-#     strains <- strains[strains != "n2"]       # remove n2
-#     append("n2", as.character(strains))       # readd at start
-#   }
+  
+  ## if strains includes n2, remove and make first so it is the first plot
+  if ("n2" %in% strains) {                     
+    strains <- strains[strains != "n2"]           # remove n2
+    strains <- append("n2", as.character(strains) # readd at start
+  }
+  
+  ## if strains includes N2, remove and make first so it is the first plot
+  if ("N2" %in% strains) {                     
+    strains <- strains[strains != "N2"]            # remove n2
+    strains <- append("N2", as.character(strains)) # readd at start
+  }
   
   plotList <- list()  #initialize list of plots as empty
   
