@@ -28,7 +28,7 @@ main <- function() {
   violinplot.area(mean.size.data)
   
   ## make and save violin plot of worm length with jittered points (using mean size data)
-   violinplot.length(mean.size.data)
+  violinplot.length(mean.size.data)
   
   ## make and save violin plot of worm width with jittered points (using mean size data)
   violinplot.width(mean.size.data)
@@ -55,7 +55,7 @@ extract.col <- function(data){
   new.data <- cbind(date, plate, time, strain, data[,2:dim(data)[2]])  
   
   ##rename columns  
-  colnames(new.data) <- c("date", "plate", "time", "strain", "frame", "ID", "number", "goodnumber", "persistance", "area", "speed", "angularspeed", "length", "rellength", "width", "relwidth", "aspect", "relaspect", "midline", "morphwidth", "kink", "bias", "pathlen", "curve", "dir", "loc_x", "loc_y", "vel_x", "vel_y", "orient", "crab")
+  colnames(new.data) <- c("date", "plate", "time", "strain", "frame", "ID", "persistance", "area", "speed", "angularspeed", "length", "rellength", "width", "relwidth", "aspect", "relaspect", "midline", "morphwidth", "kink", "bias", "pathlen", "curve", "dir", "loc_x", "loc_y", "vel_x", "vel_y", "orient", "crab")
   
   ##replace time column (factor) with time as numeric
   new.data$time  <- as.numeric(levels(new.data$time))[new.data$time]
@@ -277,38 +277,7 @@ adjusted.path <- function(dataframe) {
   return(adjusted.path.output)
 }
 
-
-
-
-## given parsed data with adjusted x and y locations, make plots for each strain, 
-# adjusted.path.output <- 
-  
-# strains <- unique(adjusted.path.output$strain) # get list of strains
-# if ("n2" %in% strains) {                       # if strains includes n2, remove and make first so it is the first plot
-#   strains <- strains[strains != "n2"]          # remove n2
-#   append("n2", as.character(strains))          # readd at start
-# }
-
-for (i in 1:length(strains)) {
-  toPlot <- adjusted.path.output[adjusted.path.output$strain == strains[i],]
-  assign(paste("plot", i, sep=""), plot.path(toPlot))
-}
-
-
-if (length(strains) %% 2 == 1) {           # check if number of strains is divisible by 2
-  rows.to.arrange <- length(strains) + 1   #if not add one to number of rows for output file
-} else {
-  rows.to.arrange <- length(strains)        # if even leave as is
-}
-
-
-call(grid.arrange, plot1, plot2, ncol=2, nrow = rows.to.arrange / 2)
-
-grid.arrange(plot1, plot2, ncol=2, nrow = rows.to.arrange / 2)
-
-
-## given dataframe with adjusted x and y locations of worm, plot worm path from (0,0) for each worm, on separate plots for 
-## different strains 
+## given dataframe of a single strain with adjusted x and y locations, plot worm paths starting from (0,0)
 plot.path <- function(toPlot) {
   
   ggplot(data=toPlot, aes(x=adj_x, y=adj_y)) + 
@@ -326,32 +295,40 @@ plot.path <- function(toPlot) {
   
 }
 
-
-
-
-
-
-adjusted.path.output <- adjusted.path(parsed)
-
-adjusted.path.output.n2 <- adjusted.path.output[adjusted.path.output$strain=="n2" ,]
-
-adjusted.path.output.n2$ID <- as.factor(adjusted.path.output.n2$ID)
-
-
-strain.Name <- toString(unique(adjusted.path.output.n2$strain))
-
-ggplot(data=adjusted.path.output.n2, aes(x=adj_x, y=adj_y)) + 
-  theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
-        panel.background = element_rect(fill = "white"), ## make the plot background white
-        axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
-        axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
-        axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
-        axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
-  ## MAYBE USE REGEX TO CAPITALIZE STRAIN NAME?
-  ggtitle(paste(unique(adjusted.path.output.n2$strain), "Path Plot")) +  ## set title
-  labs(x="Relative x position (mm)", y="Relative y position (mm)") +     ## label the x and y axes 
-  coord_cartesian(xlim = c(-10, 10), ylim=c(-10, 10)) +   ## limit the x and y axes ranges to a constant
-  geom_point(size = 1) ## overlay points that show worm path
-
+## given parsed data with adjusted x and y locations for ALL strains, make plots for all strains and save as single file
+plot.strains <- function(adjusted.path.output) {
+ 
+  strains <- unique(adjusted.path.output$strain) # get list of strains
+#   
+#   ## if strains includes n2, remove and make first so it is the first plot
+#   if ("n2" %in% strains ) {                     
+#     strains <- strains[strains != "n2"]       # remove n2
+#     append("n2", as.character(strains))       # readd at start
+#   }
+  
+  plotList <- list()  #initialize list of plots as empty
+  
+  ## create path plots for each strain
+  for (i in 1:length(strains)) {
+    toPlot <- adjusted.path.output[adjusted.path.output$strain == strains[i],]   # subset adjusted path data for strain
+    plotName <- paste("plot", i, sep="")   # make arbitrary unique plot name
+    assign(plotName, plot.path(toPlot))    # assign path plot of specific strain to plot name
+    plotList[[i]] <- get(plotName)         # add plot to list of plots
+  }
+  
+  ## figure out how many rows are needed to arrange plots for each strain with 2 columns
+  if (length(strains) %% 2 == 1) {           # check if number of strains is divisible by 2
+    rows.to.arrange <- (length(strains) + 1)/2   #if not add one to number of rows for output file and divide by 2 (for 2 columns)
+  } else {
+    rows.to.arrange <- length(strains)/2        # if even leave as is and divide by 2 (for 2 columns)
+  }
+  
+  ## make arguments (with list of plots) to be arranged by gridExtra
+  arrangeArgs <- c(plotList, ncol=2, nrow = rows.to.arrange)
+  
+  ## arrange plots
+  do.call(grid.arrange, arrangeArgs)
+  
+}
 
 main()
