@@ -21,6 +21,10 @@ main <- function() {
   ## call function to call speed vs. time
   plot.speed.time(parsed.data)
   
+  ##=========================================================================================================
+  ## BODY SIZE PLOTS
+  ##=========================================================================================================
+  
   ## use function to get mean size data for each worm (mean size data from 60 to 70s)
   mean.size.data <- mean.size(parsed.data)
   
@@ -33,11 +37,26 @@ main <- function() {
   ## make and save violin plot of worm width with jittered points (using mean size data)
   violinplot.width(mean.size.data)
   
+  ##=========================================================================================================
+  ## PATHLENGTH PLOT
+  ##=========================================================================================================
+  
   ## use function to get pathlength data for each worm (pathlength over 530 to 590s)
   mean.pathlength.data <- mean.pathlength(parsed.data)
   
   ## make and save violin plot of worm pathlength data with jittered points
   violinplot.pathlength(mean.pathlength.data)
+  
+  ##=========================================================================================================
+  ## PATH PLOT
+  ##=========================================================================================================
+  
+  ## use function to change worm x and y positions to start from 0 (over 530 to 590s)
+  adjusted.path.data <- adjusted.path(parsed.data)
+  
+  ## make and save path plot of each worm from 530 to 590s (separated by strain, starting at (0,0))
+  plot.strains(adjusted.path.data)
+  
 }
 
 
@@ -104,6 +123,10 @@ plot.speed.time <- function(dataframe) {
   ggsave(file="results/speedVtime.pdf", g, height = 3, width = 5)
 }
 
+##=========================================================================================================
+## BODY SIZE FUNCTIONS
+##=========================================================================================================
+
 ## given parsed data return df with mean area, length, and width (from 60-70s) of each worm (including strain)
 mean.size <- function(dataframe) {
   
@@ -120,11 +143,11 @@ mean.size <- function(dataframe) {
 ## given size means, make body area violin plot
 violinplot.area <- function(mean.size.output) {
   
-  unique(mean.size.data$strain)
-  nrow(mean.size.data[mean.size.data$strain == "N2",])
-  nrow(mean.size.data[mean.size.data$strain == "gk1040",])
-  nrow(mean.size.data[mean.size.data$strain == "RAB-28",])
-  nrow(mean.size.data[mean.size.data$strain == "MX2313",])
+#   unique(mean.size.data$strain)
+#   nrow(mean.size.data[mean.size.data$strain == "N2",])
+#   nrow(mean.size.data[mean.size.data$strain == "gk1040",])
+#   nrow(mean.size.data[mean.size.data$strain == "RAB-28",])
+#   nrow(mean.size.data[mean.size.data$strain == "MX2313",])
   
   g <- ggplot(mean.size.output, aes(x = strain, y = area)) + ## plot lengths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
@@ -140,7 +163,7 @@ violinplot.area <- function(mean.size.output) {
     geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay median line
   
   ##save plot
-  ggsave(file="results/violinplot_area.pdf", g, height = 3, width = 5)
+  ggsave(file="results/violinplot_area.pdf", g)
 }
 
 ## given size means, make body length violin plot
@@ -160,7 +183,7 @@ violinplot.length <- function(mean.size.output) {
     geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay median line
   
   ##save plot
-  ggsave(file="results/violinplot_length.pdf", g, height = 3, width = 5)
+  ggsave(file="results/violinplot_length.pdf", g)
 }
 
 ## make body width violin plot
@@ -181,8 +204,12 @@ violinplot.width <- function(mean.size.output) {
     geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay median line
   
   ##save plot
-  ggsave(file="results/violinplot_width.pdf", g, height = 3, width = 5)
+  ggsave(file="results/violinplot_width.pdf", g)
 }
+
+##=========================================================================================================
+## PATHLENGTH FUNCTIONS
+##=========================================================================================================
 
 ## Given matrix or df of loc_x and loc_y, return total distance
 ## quicker implementation
@@ -245,9 +272,13 @@ violinplot.pathlength <- function(mean.pathlength.output) {
     geom_errorbar(stat = "hline", yintercept = "median", width=0.4,aes(ymax=..y..,ymin=..y..)) ## overlay median line
   
   ##save plot
-  ggsave(file="results/violinplot_pathlength.pdf", g, height = 3, width = 5)
+  ggsave(file="results/violinplot_pathlength.pdf", g)
 
 }
+
+##=========================================================================================================
+## PATHPLOT FUNCTIONS
+##=========================================================================================================
 
 ## given dataframe with x locations, adjust initial x to 0 and following x's accordingly
 adjust.x <- function(df.x) {
@@ -287,7 +318,6 @@ plot.path <- function(toPlot) {
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
           axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
-    ## MAYBE USE REGEX TO CAPITALIZE STRAIN NAME?
     ggtitle(paste(unique(toPlot$strain), "Path Plot")) +  ## set title
     labs(x="Relative x position (mm)", y="Relative y position (mm)") +     ## label the x and y axes 
     coord_cartesian(xlim = c(-10, 10), ylim=c(-10, 10)) +   ## limit the x and y axes ranges to a constant
@@ -302,8 +332,8 @@ plot.strains <- function(adjusted.path.output) {
   
   ## if strains includes n2, remove and make first so it is the first plot
   if ("n2" %in% strains) {                     
-    strains <- strains[strains != "n2"]           # remove n2
-    strains <- append("n2", as.character(strains) # readd at start
+    strains <- strains[strains != "n2"]            # remove n2
+    strains <- append("n2", as.character(strains)) # readd at start
   }
   
   ## if strains includes N2, remove and make first so it is the first plot
@@ -332,8 +362,11 @@ plot.strains <- function(adjusted.path.output) {
   ## make arguments (with list of plots) to be arranged by gridExtra
   arrangeArgs <- c(plotList, ncol=2, nrow = rows.to.arrange)
   
-  ## arrange plots
-  do.call(grid.arrange, arrangeArgs)
+  ## make plot with N2 as first plot
+  g <- do.call(arrangeGrob, arrangeArgs) 
+  
+  ##save plot
+  ggsave(file="results/path_plot.pdf", g)
   
 }
 
