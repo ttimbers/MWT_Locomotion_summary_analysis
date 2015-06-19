@@ -136,6 +136,23 @@ mean.size <- function(dataframe) {
   ## aggregate mean area, length, and width with each worm (ID), retaining strain and plate info
   mean.subset <- aggregate(cbind(area, length, width) ~ ID + strain + plate, time.subset, mean)  
   
+  ## get levels of strain
+  strainLevels <- levels(mean.subset$strain)
+  
+  ## if strains includes n2, make this the first factor in levels so it is plotted first
+  if ("n2" %in% strainLevels) {                     
+    strainLevels <- strainLevels[strainLevels != "n2"]         # remove n2
+    strainLevels <- append("n2", strainLevels)   # readd at start
+    levels(mean.subset$strain) <- strainLevels
+  }
+  
+  ## if strains includes N2, make this the first factor in levels so it is plotted first
+  if ("N2" %in% strainLevels) {                     
+    strainLevels <- strainLevels[strainLevels != "N2"]          # remove N2
+    strainLevels <- append("N2", strainLevels)                  # readd at start
+    levels(mean.subset$strain) <- strainLevels
+  }
+  
   return(mean.subset)
 
 }
@@ -251,6 +268,23 @@ mean.pathlength <- function(dataframe) {
   pathlength.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
                 pathlength = pathlength(cbind(loc_x,loc_y)))
   
+  ## get levels of strain
+  strainLevels <- levels(pathlength.output$strain)
+  
+  ## if strains includes n2, make this the first factor in levels so it is plotted first
+  if ("n2" %in% strainLevels) {                     
+    strainLevels <- strainLevels[strainLevels != "n2"]         # remove n2
+    strainLevels <- append("n2", strainLevels)                 # readd at start
+    levels(pathlength.output$strain) <- strainLevels
+  }
+  
+  ## if strains includes N2, make this the first factor in levels so it is plotted first
+  if ("N2" %in% strainLevels) {                     
+    strainLevels <- strainLevels[strainLevels != "N2"]          # remove N2
+    strainLevels <- append("N2", strainLevels)                  # readd at start
+    levels(pathlength.output$strain) <- strainLevels
+  }
+  
   return(pathlength.output)
   
 }
@@ -352,15 +386,8 @@ plot.strains <- function(adjusted.path.output) {
     plotList[[i]] <- get(plotName)         # add plot to list of plots
   }
   
-  ## figure out how many rows are needed to arrange plots for each strain with 2 columns
-  if (length(strains) %% 2 == 1) {           # check if number of strains is divisible by 2
-    rows.to.arrange <- (length(strains) + 1)/2   #if not add one to number of rows for output file and divide by 2 (for 2 columns)
-  } else {
-    rows.to.arrange <- length(strains)/2        # if even leave as is and divide by 2 (for 2 columns)
-  }
-  
   ## make arguments (with list of plots) to be arranged by gridExtra
-  arrangeArgs <- c(plotList, ncol=2, nrow = rows.to.arrange)
+  arrangeArgs <- c(plotList, ncol=2)
   
   ## make plot with N2 as first plot
   g <- do.call(arrangeGrob, arrangeArgs) 
