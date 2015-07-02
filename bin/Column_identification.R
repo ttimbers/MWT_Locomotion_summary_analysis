@@ -385,10 +385,47 @@ adjusted.path <- function(dataframe) {
   return(adjusted.path.output)
 }
 
+## given dataframe of a single strain with adjusted x and y locations, replace duplicate IDs between plates with unique IDs
+uniqueID <- function(toPlot) {
+  
+  groups <- ddply(toPlot, cbind("ID", "plate", "strain"), summarize, ID = mean(ID))
+  duplicateRows <- groups[duplicated(groups$ID),]
+  
+  if (nrow(duplicateRows) > 0) {
+    
+    numberDuplicates <- nrow(duplicateRows)
+    
+    for (i in 1:numberDuplicates) {  
+      
+      duplicateRow <- duplicateRows[i,]
+      plate <- duplicateRow$plate
+      strain <- duplicateRow$strain
+      ID <- duplicateRow$ID
+  
+      toPlot[toPlot$plate == plate & toPlot$strain == strain & toPlot$ID == ID,]$ID <- runif(1)
+    }
+    
+    uniqueID(toPlot)
+    
+  } else {
+    return(toPlot)
+  }
+}
+
+
 ## given dataframe of a single strain with adjusted x and y locations, plot worm paths starting from (0,0)
 plot.path <- function(toPlot) {
   
-  ggplot(data=toPlot, aes(x=adj_x, y=adj_y)) + 
+  toPlot <- read.table("toPlot", head=TRUE)
+#   print(unique(toPlot$ID))
+  
+  toPlot.uniqueIDs <- uniqueID(toPlot)
+  print(unique(toPlot.uniqueIDs$ID))
+  
+#   toPlot <- toPlot[toPlot$ID <32 & toPlot$ID > 16,]
+    toPlot <- toPlot[toPlot$ID == 20,]
+
+  g <- ggplot(data=toPlot, aes(x=adj_x, y=adj_y)) + 
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
           panel.background = element_rect(fill = "white"), ## make the plot background white
           axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
@@ -398,9 +435,17 @@ plot.path <- function(toPlot) {
           aspect.ratio = 1) + ## set aspect ratio to 1
     ggtitle(paste(unique(toPlot$strain), "Path Plot")) +  ## set title
     labs(x="Relative x position (mm)", y="Relative y position (mm)") +     ## label the x and y axes 
+#     
+#     scale_x_discrete(labels=  ## overlay x axis labels with # of observations
+#                        paste(levels(mean.pathlength.output$strain),
+#                              "\n(n=",table(mean.pathlength.output$strain),")",    ## add number of observations to label on 2nd line
+#                              sep="")) +  
     coord_cartesian(xlim = c(-8, 8), ylim=c(-8, 8)) +   ## limit the x and y axes ranges to a constant
-    geom_point(size = 1) ## overlay points that show worm path
+#     geom_point(size = 1, aes(colour=as.factor(toPlot$ID)))  ## overlay points that show worm path
+    geom_path(aes(colour=as.factor(toPlot$ID)))
+    guides(colour=FALSE) ## don't show legend for worm ID
   
+ggsave("test.pdf", g)
 }
 
 ## given parsed data with adjusted x and y locations for ALL strains, make plots for all strains and save as single file
