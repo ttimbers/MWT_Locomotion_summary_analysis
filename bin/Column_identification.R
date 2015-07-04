@@ -195,7 +195,9 @@ violinplot.area <- function(mean.size.output) {
     geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3, colour="gray50") +  ## overlay jitter plot
     scale_x_discrete(labels=  ## overlay x axis labels with # of observations
                        paste(levels(mean.size.output$strain),
-                             "\n(n=",table(mean.size.output$strain),")",    ## add number of observations to label on 2nd line
+                             "\n(n=",
+                             table(mean.size.output$strain),
+                             ")",    ## add number of observations to label on 2nd line
                              sep="")) +  
     stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
     stat_summary(fun.y=median, geom="point", size=3, color="white")
@@ -388,10 +390,14 @@ adjusted.path <- function(dataframe) {
 ## given dataframe of a single strain with adjusted x and y locations, replace duplicate IDs between plates with unique IDs
 uniqueID <- function(toPlot) {
   
-  groups <- ddply(toPlot, cbind("ID", "plate", "strain"), summarize, ID = mean(ID))
-  duplicateRows <- groups[duplicated(groups$ID),]
+  ## group by ID, plate and strain, and aggregate ID by mean (IDs should be identical in each grouping)
+  groups <- ddply(toPlot, cbind("ID", "plate", "strain"), summarize, ID = mean(ID))  
+
+  ## find aggregated combinations of ID + plate + strain that have duplicate IDs (different plates might have duplicate IDs)
+  duplicateRows <- groups[duplicated(groups$ID),]  
   
-  if (nrow(duplicateRows) > 0) {
+  ## if there are duplicate IDs, replace the IDs in toPlot with a new unique ID (for each grouping of plate+strain+id)
+  if (nrow(duplicateRows) > 0) {              
     
     numberDuplicates <- nrow(duplicateRows)
     
@@ -405,26 +411,25 @@ uniqueID <- function(toPlot) {
       toPlot[toPlot$plate == plate & toPlot$strain == strain & toPlot$ID == ID,]$ID <- runif(1)
     }
     
+    ## use recursion to check if any of the newly assigned random IDs are duplicates
     uniqueID(toPlot)
     
   } else {
+    
+    ## change ID to factor so each unique ID (representing a unique worm) can have a distinct colour in ggplot2
+    toPlot$ID <- as.factor(toPlot$ID)
+    
+    ## return toPlot
     return(toPlot)
   }
 }
 
-
 ## given dataframe of a single strain with adjusted x and y locations, plot worm paths starting from (0,0)
 plot.path <- function(toPlot) {
   
-  toPlot <- read.table("toPlot", head=TRUE)
-#   print(unique(toPlot$ID))
+  ## replace duplicate IDs between plates with unique IDs so each worm plotted can have a distinct colour
+  toPlot <- uniqueID(toPlot)
   
-  toPlot.uniqueIDs <- uniqueID(toPlot)
-  print(unique(toPlot.uniqueIDs$ID))
-  
-#   toPlot <- toPlot[toPlot$ID <32 & toPlot$ID > 16,]
-    toPlot <- toPlot[toPlot$ID == 20,]
-
   g <- ggplot(data=toPlot, aes(x=adj_x, y=adj_y)) + 
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
           panel.background = element_rect(fill = "white"), ## make the plot background white
@@ -434,42 +439,41 @@ plot.path <- function(toPlot) {
           axis.title.y = element_text(size = 16, vjust = 1.3), ## change the y-axis label font to black, make larger, and move away from axis
           aspect.ratio = 1) + ## set aspect ratio to 1
     ggtitle(paste(unique(toPlot$strain), "Path Plot")) +  ## set title
-    labs(x="Relative x position (mm)", y="Relative y position (mm)") +     ## label the x and y axes 
-#     
-#     scale_x_discrete(labels=  ## overlay x axis labels with # of observations
-#                        paste(levels(mean.pathlength.output$strain),
-#                              "\n(n=",table(mean.pathlength.output$strain),")",    ## add number of observations to label on 2nd line
-#                              sep="")) +  
+    labs(x = 
+           paste("Relative x position (mm)", 
+                 "\n(n=" ,length(unique(toPlot$ID)), ")",
+                 sep=""), 
+         y = "Relative y position (mm)") +
     coord_cartesian(xlim = c(-8, 8), ylim=c(-8, 8)) +   ## limit the x and y axes ranges to a constant
-#     geom_point(size = 1, aes(colour=as.factor(toPlot$ID)))  ## overlay points that show worm path
-    geom_path(aes(colour=as.factor(toPlot$ID)))
+    geom_point(size = 0.5, aes(colour=ID)) +  ## overlay points that show worm path
     guides(colour=FALSE) ## don't show legend for worm ID
-  
-ggsave("test.pdf", g)
 }
 
 ## given parsed data with adjusted x and y locations for ALL strains, make plots for all strains and save as single file
 plot.strains <- function(adjusted.path.output) {
- 
-  strains <- unique(adjusted.path.output$strain) # get list of strains
   
-  ## if strains includes n2, remove and make first so it is the first plot
-  if ("n2" %in% strains) {                     
-    strains <- strains[strains != "n2"]            # remove n2
-    strains <- append("n2", as.character(strains)) # readd at start
+  ## get levels of strain
+  strainLevels <- levels(adjusted.path.output$strain)
+  
+  ## if strains includes n2, make this the first factor in levels so it is plotted first
+  if ("n2" %in% strainLevels) {                     
+    strainLevels <- strainLevels[strainLevels != "n2"]         # remove n2
+    strainLevels <- append("n2", strainLevels)                 # readd at start
+    levels(adjusted.path.output$strain) <- strainLevels        # update levels with new order
   }
-
-  ## if strains includes N2, remove and make first so it is the first plot
-  if ("N2" %in% strains) {                     
-    strains <- strains[strains != "N2"]            # remove n2
-    strains <- append("N2", as.character(strains)) # readd at start
+  
+  ## if strains includes N2, make this the first factor in levels so it is plotted first
+  if ("N2" %in% strainLevels) {                     
+    strainLevels <- strainLevels[strainLevels != "N2"]         # remove N2
+    strainLevels <- append("N2", strainLevels)                 # readd at start
+    levels(adjusted.path.output$strain) <- strainLevels        # update levels with new order
   }
   
   plotList <- list()  #initialize list of plots as empty
   
   ## create path plots for each strain
-  for (i in 1:length(strains)) {
-    toPlot <- adjusted.path.output[adjusted.path.output$strain == strains[i],]   # subset adjusted path data for strain
+  for (i in 1:length(strainLevels)) {
+    toPlot <- adjusted.path.output[adjusted.path.output$strain == strainLevels[i],]   # subset adjusted path data for strain
     plotName <- paste("plot", i, sep="")   # make arbitrary unique plot name
     assign(plotName, plot.path(toPlot))    # assign path plot of specific strain to plot name
     plotList[[i]] <- get(plotName)         # add plot to list of plots
