@@ -173,7 +173,7 @@ mean.size <- function(dataframe) {
   }
   
   return(mean.subset)
-
+  
 }
 
 ## given size means, make body area violin plot
@@ -186,24 +186,21 @@ violinplot.area <- function(mean.size.output) {
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
           axis.title.y = element_text(size = 16, vjust = 1.3)) +  ## change the y-axis label font to black, make larger, and move away from axis
-#           panel.border = element_rect(colour = "gray", fill=NA, size=0.8),
-#           panel.grid.major.y = element_line(colour = "gray", size=0.5),
-#           panel.grid.minor.y = element_line(colour = "gray", size = 0.5)) +
     ggtitle("Violin Plot of Worm Area") +            ## set title
     labs(x="Strain", y=expression(Area ~ (mm^{2}))) +     ## label the x and y axes 
     geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot    
-    geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3, colour="gray50") +  ## overlay jitter plot
+    geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
     scale_x_discrete(labels=  ## overlay x axis labels with # of observations
                        paste(levels(mean.size.output$strain),
                              "\n(n=",
                              table(mean.size.output$strain),
-                             ")",    ## add number of observations to label on 2nd line
+                             ")", 
                              sep="")) +  
-    stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
-    stat_summary(fun.y=median, geom="point", size=3, color="white")
+    stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) +    ## add error bar for median confidence interval (95%)
+    stat_summary(fun.y=median, geom="point", size=2, color="white") ## add a median point
   
   #save plot
-  ggsave(file="results/violinplot_area.pdf", g)
+  ggsave(file="results/violinplot_area.pdf", g, height = 5)
 }
 
 ## given size means, make body length violin plot
@@ -216,22 +213,19 @@ violinplot.length <- function(mean.size.output) {
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
           axis.title.y = element_text(size = 16, vjust = 1.3)) +  ## change the y-axis label font to black, make larger, and move away from axis
-#           panel.border = element_rect(colour = "gray", fill=NA, size=0.8),
-#           panel.grid.major.y = element_line(colour = "gray", size=0.5),
-#           panel.grid.minor.y = element_line(colour = "gray", size = 0.5)) +
     ggtitle("Violin Plot of Worm Length") +            ## set title
     labs(x="Strain", y="Length (mm)") +     ## label the x and y axes     
     geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot    
-    geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3, colour="gray50") +  ## overlay jitter plot
+    geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
     scale_x_discrete(labels=  ## overlay x axis labels with # of observations
                        paste(levels(mean.size.output$strain),
                              "\n(n=",table(mean.size.output$strain),")",    ## add number of observations to label on 2nd line
                              sep="")) +  
     stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
-    stat_summary(fun.y=median, geom="point", size=3, color="white")
+    stat_summary(fun.y=median, geom="point", size=2, color="white")
   
   ##save plot
-  ggsave(file="results/violinplot_length.pdf", g)
+  ggsave(file="results/violinplot_length.pdf", g, height = 5)
 }
 
 ## make body width violin plot
@@ -244,22 +238,19 @@ violinplot.width <- function(mean.size.output) {
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
           axis.title.y = element_text(size = 16, vjust = 1.3)) +  ## change the y-axis label font to black, make larger, and move away from axis
-    #           panel.border = element_rect(colour = "gray", fill=NA, size=0.8),
-    #           panel.grid.major.y = element_line(colour = "gray", size=0.5),
-    #           panel.grid.minor.y = element_line(colour = "gray", size = 0.5)) +
     ggtitle("Violin Plot of Worm Width") +            ## set title
     labs(x="Strain", y="Width (mm)") +     ## label the x and y axes     
     geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot    
-    geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3, colour="gray50") +  ## overlay jitter plot
+    geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
     scale_x_discrete(labels=  ## overlay x axis labels with # of observations
                        paste(levels(mean.size.output$strain),
                              "\n(n=",table(mean.size.output$strain),")",    ## add number of observations to label on 2nd line
                              sep="")) +  
     stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
-    stat_summary(fun.y=median, geom="point", size=3, color="white")
+    stat_summary(fun.y=median, geom="point", size=2, color="white")
   
   ##save plot
-  ggsave(file="results/violinplot_width.pdf", g)
+  ggsave(file="results/violinplot_width.pdf", g, height = 5)
 }
 
 ##=========================================================================================================
@@ -304,7 +295,7 @@ mean.pathlength <- function(dataframe) {
   
   ## aggregate data with pathlength function, grouping by ID, strain, and plate
   pathlength.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
-                pathlength = pathlength(cbind(loc_x,loc_y)))
+                             pathlength = pathlength(cbind(loc_x,loc_y)))
   
   ## get levels of strain
   strainLevels <- levels(pathlength.output$strain)
@@ -337,22 +328,19 @@ violinplot.pathlength <- function(mean.pathlength.output) {
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
           axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
-    #           panel.border = element_rect(colour = "gray", fill=NA, size=0.8),
-    #           panel.grid.major.y = element_line(colour = "gray", size=0.5),
-    #           panel.grid.minor.y = element_line(colour = "gray", size = 0.5)) +
     ggtitle("Violin Plot of Worm Pathlength") +            ## set title
     labs(x="Strain", y= "Pathlength from 530s to 590s (mm)") +     ## label the x and y axes 
     geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot
-    geom_jitter(alpha = 0.5, position = position_jitter(width = 0.05), size = 3, colour="gray50") +  ## overlay jitter plot
+    geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
     scale_x_discrete(labels=  ## overlay x axis labels with # of observations
                        paste(levels(mean.pathlength.output$strain),
                              "\n(n=",table(mean.pathlength.output$strain),")",    ## add number of observations to label on 2nd line
                              sep="")) +  
     stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
-    stat_summary(fun.y=median, geom="point", size=3, color="white")
+    stat_summary(fun.y=median, geom="point", size=2, color="white")
   
   ##save plot
-  ggsave(file="results/violinplot_pathlength.pdf", g)
+  ggsave(file="results/violinplot_pathlength.pdf", g, height = 5)
 }
 
 ##=========================================================================================================
@@ -381,8 +369,8 @@ adjusted.path <- function(dataframe) {
   time.subset <- dataframe[dataframe$time > 530 & dataframe$time < 590, ]
   
   adjusted.path.output <- ddply(time.subset, cbind("ID", "plate", "strain"), transform,
-        adj_x = adjust.x(loc_x),
-        adj_y = adjust.y(loc_y))
+                                adj_x = adjust.x(loc_x),
+                                adj_y = adjust.y(loc_y))
   
   return(adjusted.path.output)
 }
@@ -392,7 +380,7 @@ uniqueID <- function(toPlot) {
   
   ## group by ID, plate and strain, and aggregate ID by mean (IDs should be identical in each grouping)
   groups <- ddply(toPlot, cbind("ID", "plate", "strain"), summarize, ID = mean(ID))  
-
+  
   ## find aggregated combinations of ID + plate + strain that have duplicate IDs (different plates might have duplicate IDs)
   duplicateRows <- groups[duplicated(groups$ID),]  
   
@@ -407,7 +395,7 @@ uniqueID <- function(toPlot) {
       plate <- duplicateRow$plate
       strain <- duplicateRow$strain
       ID <- duplicateRow$ID
-  
+      
       toPlot[toPlot$plate == plate & toPlot$strain == strain & toPlot$ID == ID,]$ID <- runif(1)
     }
     
