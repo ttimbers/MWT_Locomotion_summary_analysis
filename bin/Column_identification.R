@@ -42,11 +42,21 @@ main <- function() {
   ## PATHLENGTH PLOT
   ##=========================================================================================================
   
-  ## use function to get pathlength data for each worm (pathlength over 530 to 590s)
-  mean.pathlength.data <- mean.pathlength(parsed.data)
+  ## get pathlength data for each worm from 530 to 590s
+  pathlength.data <- aggregatePathlength(parsed.data)
   
   ## make and save violin plot of worm pathlength data with jittered points
-  violinplot.pathlength(mean.pathlength.data)
+  violinplot.pathlength(pathlength.data)
+  
+  ##=========================================================================================================
+  ## TOTAL DISTANCE PLOT
+  ##=========================================================================================================
+  
+  ## use function to get total distance data for each worm (from 530s to 590s)
+  distance.data <- aggregateDistance(parsed.data)
+  
+  ## make and save violin plot of total distances travelled with jittered points
+  violinplot.distance(distance.data)
   
   ##=========================================================================================================
   ## PATH PLOT
@@ -123,6 +133,33 @@ plot.speed.time <- function(dataframe) {
 }
 
 ##=========================================================================================================
+## HELPER FUNCTION TO PLOT N2 FIRST
+##=========================================================================================================
+
+## given dataframe with worm strains, return same dataframe with N2 as the first factor in the levels
+n2.first <- function(dataframe) {
+  
+  ## get strain levels
+  strainLevels <- levels(dataframe$strain) 
+  
+  ## if strains includes n2, make this the first factor in levels so it is plotted first
+  if ("n2" %in% strainLevels) {                     
+    strainLevels <- strainLevels[strainLevels != "n2"]         # remove n2
+    strainLevels <- append("n2", strainLevels)                 # readd at start
+    levels(dataframe$strain) <- strainLevels
+  }
+  
+  ## if strains includes N2, make this the first factor in levels so it is plotted first
+  if ("N2" %in% strainLevels) {                     
+    strainLevels <- strainLevels[strainLevels != "N2"]          # remove N2
+    strainLevels <- append("N2", strainLevels)                  # readd at start
+    levels(dataframe$strain) <- strainLevels
+  }
+  
+  return(dataframe)
+}
+
+##=========================================================================================================
 ## MEDIAN CONFIDENCE INTERVAL HELPER FUNCTIONS
 ##=========================================================================================================
 
@@ -158,19 +195,8 @@ mean.size <- function(dataframe) {
   ## get levels of strain
   strainLevels <- levels(mean.subset$strain)
   
-  ## if strains includes n2, make this the first factor in levels so it is plotted first
-  if ("n2" %in% strainLevels) {                     
-    strainLevels <- strainLevels[strainLevels != "n2"]         # remove n2
-    strainLevels <- append("n2", strainLevels)   # readd at start
-    levels(mean.subset$strain) <- strainLevels
-  }
-  
-  ## if strains includes N2, make this the first factor in levels so it is plotted first
-  if ("N2" %in% strainLevels) {                     
-    strainLevels <- strainLevels[strainLevels != "N2"]          # remove N2
-    strainLevels <- append("N2", strainLevels)                  # readd at start
-    levels(mean.subset$strain) <- strainLevels
-  }
+  ## make n2 first factor so it is plotted first
+  mean.subset <- n2.first(mean.subset)
   
   return(mean.subset)
   
@@ -257,71 +283,43 @@ violinplot.width <- function(mean.size.output) {
 ## PATHLENGTH FUNCTIONS
 ##=========================================================================================================
 
-## Given matrix or df of loc_x and loc_y, return total distance
-## quicker implementation
-pathlength <- function(xy) {
+## Given list of pathlengths, return total change in pathlength from beginning to end of list
+## ie: find pathlength from 530s to 590s by subtracting pathlength at 530s from pathlength at 590s
+pathlength <- function(pathlens) {
   
-  previous.x <- xy[1,1]      ## initiate previous x and y as first x and y values
-  previous.y <- xy[1,2]     
-  total <- 0                 ## initiate pathlength as 0
-  
-  for (i in 1:nrow(xy)) { ## use a for loop to go through each row of matrix (corresponding to an x,y point)
-    ## and calculate euclidean distance between each point and the previous point
-    
-    diff.x <- xy[i,1] - previous.x  ## get difference between current x position and previous x position
-    diff.y <- xy[i,2] - previous.y
-    
-    total <- total + sqrt((diff.x)^2 + (diff.y)^2)  ## calculate diagonal of x and y difference (euclidean)
-    ## and add to total pathlength
-    
-    previous.x <- xy[i,1]  ## set current x as previous x
-    previous.y <- xy[i,2]  ## set current y as previous y
-    
+  if (any(is.na(pathlens))) {    ## if there are any missing pathlengths, we cannot find the pathlength over the time interval,
+    return(NA)                   ## as the next pathlengths after the NA value(s) will start at 0
   }
-  return(total)
+  
+  else {
+    return(pathlens[length(pathlens)] - pathlens[1])  ## subtract final pathlength (at 590s) from initial pathlength at 530s
+  }
 }
 
-## slower implementation (uses base dist function to find distance between every point, not just consecutive points)
-#   pathlength <- function(xy) {
-#     out <- as.matrix(dist(xy))
-#     sum(out[row(out) - col(out) == 1])
-#   }
-
-## given parsed data return data frame with mean pathlength (from 530 - 590s) for each worm, with ID, strain, and plate
-mean.pathlength <- function(dataframe) {
+## given parsed data return data frame with pathlength (from 530 - 590s) for each worm, with ID, strain, and plate
+aggregatePathlength <- function(dataframe) {
   
   ## subset parsed data to times between 530 and 590 seconds
   time.subset <- dataframe[dataframe$time > 530 & dataframe$time < 590, ]
   
   ## aggregate data with pathlength function, grouping by ID, strain, and plate
   pathlength.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
-                             pathlength = pathlength(cbind(loc_x,loc_y)))
+                             pathlen = pathlength(pathlen))
   
-  ## get levels of strain
-  strainLevels <- levels(pathlength.output$strain)
+  ## make n2 first factor so it is plotted first
+  pathlength.output <- n2.first(pathlength.output)
   
-  ## if strains includes n2, make this the first factor in levels so it is plotted first
-  if ("n2" %in% strainLevels) {                     
-    strainLevels <- strainLevels[strainLevels != "n2"]         # remove n2
-    strainLevels <- append("n2", strainLevels)                 # readd at start
-    levels(pathlength.output$strain) <- strainLevels
-  }
-  
-  ## if strains includes N2, make this the first factor in levels so it is plotted first
-  if ("N2" %in% strainLevels) {                     
-    strainLevels <- strainLevels[strainLevels != "N2"]          # remove N2
-    strainLevels <- append("N2", strainLevels)                  # readd at start
-    levels(pathlength.output$strain) <- strainLevels
-  }
+  ## drop rows with NA pathlengths
+  pathlength.output <- na.omit(pathlength.output)
   
   return(pathlength.output)
   
 }
 
 ## given mean pathlength data make violin plot
-violinplot.pathlength <- function(mean.pathlength.output) {
+violinplot.pathlength <- function(aggPath.output) {
   
-  g <- ggplot(mean.pathlength.output, aes(x = strain, y = pathlength)) + ## plot pathlengths
+  g <- ggplot(mean.pathlength.output, aes(x = strain, y = pathlen)) + ## plot pathlengths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
           panel.background = element_rect(fill = "white"), ## make the plot background white
           axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
@@ -339,8 +337,84 @@ violinplot.pathlength <- function(mean.pathlength.output) {
     stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
     stat_summary(fun.y=median, geom="point", size=2, color="white")
   
-  ##save plot
+  #save plot
   ggsave(file="results/violinplot_pathlength.pdf", g, height = 5)
+}
+
+##=========================================================================================================
+## FUNCTIONS FOR TOTAL DISTANCE TRAVELLED
+##=========================================================================================================
+
+## Given matrix or df of loc_x and loc_y, return total distance
+## quicker implementation
+totalDistance <- function(xy) {
+  
+  previous.x <- xy[1,1]      ## initiate previous x and y as first x and y values
+  previous.y <- xy[1,2]     
+  total <- 0                 ## initiate distance as 0
+  
+  for (i in 1:nrow(xy)) { ## use a for loop to go through each row of matrix (corresponding to an x,y point)
+    ## and calculate euclidean distance between each point and the previous point
+    
+    diff.x <- xy[i,1] - previous.x  ## get difference between current x position and previous x position
+    diff.y <- xy[i,2] - previous.y
+    
+    total <- total + sqrt((diff.x)^2 + (diff.y)^2)  ## calculate diagonal of x and y difference (euclidean)
+    ## and add to total distance
+    
+    previous.x <- xy[i,1]  ## set current x as previous x
+    previous.y <- xy[i,2]  ## set current y as previous y
+    
+  }
+  return(total)
+}
+
+## slower implementation (uses base dist function to find distance between every point, not just consecutive points)
+#   totalDistance <- function(xy) {
+#     out <- as.matrix(dist(xy))
+#     sum(out[row(out) - col(out) == 1])
+#   }
+
+## given parsed data return data frame with total distance travelled (from 530 - 590s) for each worm, with ID, strain, and plate
+aggregateDistance <- function(dataframe) {
+  
+  ## subset parsed data to times between 530 and 590 seconds
+  time.subset <- dataframe[dataframe$time > 530 & dataframe$time < 590, ]
+  
+  ## aggregate data with distance function, grouping by ID, strain, and plate
+  aggDist.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
+                          distance = totalDistance(cbind(loc_x,loc_y)))
+  
+  ## make n2 first factor so it is plotted first
+  aggDist.output <- n2.first(aggDist.output)
+  
+  return(aggDist.output)
+  
+}
+
+## given dataframe of aggregated worm distances make violin plot
+violinplot.distance <- function(aggDist.output) {
+  
+  g <- ggplot(aggDist.output, aes(x = strain, y = distance)) + ## plot distances for each strain
+    theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
+          panel.background = element_rect(fill = "white"), ## make the plot background white
+          axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
+          axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
+          axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
+          axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
+    ggtitle("Total Distance Travelled") +            ## set title
+    labs(x="Strain", y= "Distance travelled from 530s to 590s (mm)") +     ## label the x and y axes 
+    geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot
+    geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
+    scale_x_discrete(labels=  ## overlay x axis labels with # of observations
+                       paste(levels(aggDist.output$strain),
+                             "\n(n=",table(aggDist.output$strain),")",    ## add number of observations to label on 2nd line
+                             sep="")) +  
+    stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
+    stat_summary(fun.y=median, geom="point", size=2, color="white")
+  
+  ##save plot
+  ggsave(file="results/violinplot_totalDistance.pdf", g, height = 5)
 }
 
 ##=========================================================================================================
@@ -368,9 +442,13 @@ adjusted.path <- function(dataframe) {
   ## subset parsed data to times between 530 and 590 seconds
   time.subset <- dataframe[dataframe$time > 530 & dataframe$time < 590, ]
   
+  ## transform dataframe, by shifting x and y values to start from 0 for each worm (grouped by ID, plate, and strain)
   adjusted.path.output <- ddply(time.subset, cbind("ID", "plate", "strain"), transform,
                                 adj_x = adjust.x(loc_x),
                                 adj_y = adjust.y(loc_y))
+  
+  ## make n2 the first factor so it is plotted first
+  adjusted.path.output <- n2.first(adjusted.path.output)
   
   return(adjusted.path.output)
 }
@@ -439,25 +517,12 @@ plot.path <- function(toPlot) {
 
 ## given parsed data with adjusted x and y locations for ALL strains, make plots for all strains and save as single file
 plot.strains <- function(adjusted.path.output) {
+   
+  ## get strain levels
+  strainLevels <- levels(adjusted.path.output$strain) 
   
-  ## get levels of strain
-  strainLevels <- levels(adjusted.path.output$strain)
-  
-  ## if strains includes n2, make this the first factor in levels so it is plotted first
-  if ("n2" %in% strainLevels) {                     
-    strainLevels <- strainLevels[strainLevels != "n2"]         # remove n2
-    strainLevels <- append("n2", strainLevels)                 # readd at start
-    levels(adjusted.path.output$strain) <- strainLevels        # update levels with new order
-  }
-  
-  ## if strains includes N2, make this the first factor in levels so it is plotted first
-  if ("N2" %in% strainLevels) {                     
-    strainLevels <- strainLevels[strainLevels != "N2"]         # remove N2
-    strainLevels <- append("N2", strainLevels)                 # readd at start
-    levels(adjusted.path.output$strain) <- strainLevels        # update levels with new order
-  }
-  
-  plotList <- list()  #initialize list of plots as empty
+  #initialize list of plots as empty
+  plotList <- list()  
   
   ## create path plots for each strain
   for (i in 1:length(strainLevels)) {
