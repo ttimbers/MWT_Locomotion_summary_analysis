@@ -319,7 +319,7 @@ aggregatePathlength <- function(dataframe) {
 ## given mean pathlength data make violin plot
 violinplot.pathlength <- function(aggPath.output) {
   
-  g <- ggplot(mean.pathlength.output, aes(x = strain, y = pathlen)) + ## plot pathlengths
+  g <- ggplot(aggPath.output, aes(x = strain, y = pathlen)) + ## plot pathlengths
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
           panel.background = element_rect(fill = "white"), ## make the plot background white
           axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
@@ -331,8 +331,8 @@ violinplot.pathlength <- function(aggPath.output) {
     geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot
     geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
     scale_x_discrete(labels=  ## overlay x axis labels with # of observations
-                       paste(levels(mean.pathlength.output$strain),
-                             "\n(n=",table(mean.pathlength.output$strain),")",    ## add number of observations to label on 2nd line
+                       paste(levels(aggPath.output$strain),
+                             "\n(n=",table(aggPath.output$strain),")",    ## add number of observations to label on 2nd line
                              sep="")) +  
     stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
     stat_summary(fun.y=median, geom="point", size=2, color="white")
@@ -540,6 +540,62 @@ plot.strains <- function(adjusted.path.output) {
   
   ##save plot
   ggsave(file="results/path_plot.pdf", g)
+  
+}
+
+
+##=========================================================================================================
+## RADARPLOT FUNCTIONS
+##=========================================================================================================
+
+makeRadarPlots(mean.size.data, pathlength.data, distance.data)
+
+makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output) {
+  
+  strainLevels <- levels(mean.size.output$strain)
+  
+  strain <- c()
+  width <- c()
+  length <- c()
+  area <- c()
+  pathlength <- c()
+  distance <- c()
+  
+  for (i in 1:length(strainLevels)) {
+    
+    sizes <- mean.size.output[mean.size.output$strain == strainLevels[i],]
+    pathlens <- aggPath.output[aggPath.output$strain == strainLevels[i],]
+    distances <- aggDist.output[aggDist.output$strain == strainLevels[i],]
+    
+    strain <- c(strain, strainLevels[i])
+    width <- c(width, median(sizes$width))
+    length <- c(length, median(sizes$length))
+    area <- c(area, median(sizes$area))
+    pathlength <- c(pathlength, median(pathlens$pathlen))
+    distance <- c(distance, median(distances$distance))
+  }
+  
+  df <- data.frame(strain, width, length, area, pathlength, distance)
+  
+  maxmindf <- data.frame(
+    width = c(0.5, 0),
+    length = c(1.2, 0),
+    area = c(0.25, 0),
+    pathlength = c(0.25, 0),
+    distance = c(4, 0))
+  
+  
+  pdf("results/radar_plot.pdf")
+  par(mfrow=n2mfrow(length(strainLevels)), mar=c(2,2,5,2), xpd = TRUE)
+  lapply(1:length(strainLevels), function(i) {
+    radarchart(rbind(maxmindf, df[i,-1]), 
+               axistype = 2, 
+               seg = 5, 
+               centerzero = TRUE, 
+               palcex = 0.9,
+               title = toString(df[i,1]), vlabels = c("Width", "Length        ", "Area", "Pathlength", "         Distance"))
+  })
+  dev.off()
   
 }
 
