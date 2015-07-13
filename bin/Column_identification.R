@@ -12,6 +12,7 @@ main <- function() {
   require(stringr)
   require(gridExtra)
   require(asbio)
+  require(fmsb)
   
   ##using function to extract column names and change time column from factor to numeric
   parsed.data  <- extract.col(read.table(file))
@@ -67,6 +68,12 @@ main <- function() {
   
   ## make and save path plot of each worm from 530 to 590s (separated by strain, starting at (0,0))
   plot.strains(adjusted.path.data)
+  
+  ##=========================================================================================================
+  ## RADAR PLOT
+  ##=========================================================================================================
+  
+  makeRadarPlots(mean.size.data, pathlength.data, distance.data)
   
 }
 
@@ -547,8 +554,6 @@ plot.strains <- function(adjusted.path.output) {
 ##=========================================================================================================
 ## RADARPLOT FUNCTIONS
 ##=========================================================================================================
-
-makeRadarPlots(mean.size.data, pathlength.data, distance.data)
 
 makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output) {
   

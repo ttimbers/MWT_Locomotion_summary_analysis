@@ -23,7 +23,7 @@ user.
 
 ### Installation Dependencies
 
-`Java`, `R`, R packages `ggplot2`, `plyr`, `stringr`, `gridExtra`, and `asbio`, and the Multi-worm Tracker 
+`Java`, `R`, R packages `ggplot2`, `plyr`, `stringr`, `gridExtra`, `asbio`,and `fmsb`, and the Multi-worm Tracker 
 Analysis software (`Chore.jar`) as a shell script in the executable path named `Chore`. 
 To "easily" do this on a Mac or Linux OS, please follow the following installation 
 instructions:
