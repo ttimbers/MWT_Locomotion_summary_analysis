@@ -70,9 +70,10 @@ main <- function() {
   plot.strains(adjusted.path.data)
   
   ##=========================================================================================================
-  ## RADAR PLOT
+  ## RADAR PLOT (MEDIAN)
   ##=========================================================================================================
   
+  ## save radar plot of medians of each strain
   makeRadarPlots(mean.size.data, pathlength.data, distance.data)
   
 }
@@ -503,6 +504,9 @@ plot.path <- function(toPlot) {
   ## replace duplicate IDs between plates with unique IDs so each worm plotted can have a distinct colour
   toPlot <- uniqueID(toPlot)
   
+  ## generate upper title, as cannot use directly in expression() as it will not be evaluated
+  upperTitle <- paste(unique(toPlot$strain), "Path Plot")
+  
   g <- ggplot(data=toPlot, aes(x=adj_x, y=adj_y)) + 
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
           panel.background = element_rect(fill = "white"), ## make the plot background white
@@ -511,7 +515,7 @@ plot.path <- function(toPlot) {
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
           axis.title.y = element_text(size = 16, vjust = 1.3), ## change the y-axis label font to black, make larger, and move away from axis
           aspect.ratio = 1) + ## set aspect ratio to 1
-    ggtitle(paste(unique(toPlot$strain), "Path Plot")) +  ## set title
+    ggtitle(bquote(atop(.(paste(unique(toPlot$strain), "Path Plot")), atop(.("from 530s to 590s"), "")))) +
     labs(x = 
            paste("Relative x position (mm)", 
                  "\n(n=" ,length(unique(toPlot$ID)), ")",
@@ -557,8 +561,14 @@ plot.strains <- function(adjusted.path.output) {
 
 makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output) {
   
+  ## get strains from mean.size.output (could have used path/distance dataframes, should all be the same)
+  ## NOTE: n2 should already be the first level and thus plotted first, as n2.first(df) was called when creating mean.size.output
   strainLevels <- levels(mean.size.output$strain)
   
+  ## we will create a dataframe with features as columns (ie width, pathlength, distance, speed, etc.), 
+  ## which will have the median values for each strain.
+  ## here we initialize the columns as empty
+  ## we also make a strain column so we can keep track of which medians belong to which strain
   strain <- c()
   width <- c()
   length <- c()
@@ -566,6 +576,7 @@ makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output) {
   pathlength <- c()
   distance <- c()
   
+  ## then we loop through the strains, and add median values to the columns (as well as the strain)
   for (i in 1:length(strainLevels)) {
     
     sizes <- mean.size.output[mean.size.output$strain == strainLevels[i],]
@@ -580,8 +591,10 @@ makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output) {
     distance <- c(distance, median(distances$distance))
   }
   
+  ## construct the dataframe with median values for each feature and the strain
   df <- data.frame(strain, width, length, area, pathlength, distance)
   
+  ## construct a dataframe with the maximum and minimum values for the radar plot (see maxmin in ?radarchart)
   maxmindf <- data.frame(
     width = c(0.5, 0),
     length = c(1.2, 0),
@@ -589,19 +602,31 @@ makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output) {
     pathlength = c(0.25, 0),
     distance = c(4, 0))
   
-  
+  ## write to PDF
   pdf("results/radar_plot.pdf")
-  par(mfrow=n2mfrow(length(strainLevels)), mar=c(2,2,5,2), xpd = TRUE)
+  
+  ## n2mfrow(length(strainLevels)) automatically chooses good values for mfrow based on # of strains
+  ## margins are specified so that plots are not cutoff, and the title is not too high
+  ## xpd = TRUE is needed so that peripheral labels are not cutoff
+  par(mfrow=rev(n2mfrow(length(strainLevels))), mar=c(8,2,8,2), xpd = TRUE)
+
+  ## apply radarchart function to each row of the df (where each row has data for 1 strain)
+  ## we access the features using df[i,-1], where the -1 drops the strain name
+  ## we combine the df with the maxmindf to make a new df:
+  ## first row is the maximums, 2nd row is minimums, and 3rd row is features to plot
   lapply(1:length(strainLevels), function(i) {
     radarchart(rbind(maxmindf, df[i,-1]), 
-               axistype = 2, 
+               axistype = 2,               ## see ?radarchart
                seg = 5, 
                centerzero = TRUE, 
                palcex = 0.9,
-               title = toString(df[i,1]), vlabels = c("Width", "Length        ", "Area", "Pathlength", "         Distance"))
+               title = paste(toString(df[i,1]), "Medians", sep = " "),  ## get the strain name from the df
+               vlabels = c("Width", "Length        ", "Area", "Pathlength", "         Distance"))
+    ## Note: the labels are manually specified with whitespace so that they do not overlap with the chart. 
+    ## These must be adjusted if the number of features plotted changes.
   })
-  dev.off()
   
+  dev.off()  
 }
 
 main()
