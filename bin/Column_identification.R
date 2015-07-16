@@ -5,14 +5,39 @@
 main <- function() {
   
   args <- commandArgs(trailingOnly = TRUE)
-  file <- args[1]
+  file <- args[1]  
   
-  require(ggplot2)
-  require(plyr)
-  require(stringr)
-  require(gridExtra)
-  require(asbio)
-  require(fmsb)
+  ## Check if required packages are installed; if they are they will be loaded; if not they will be installed and loaded
+  
+  if(!require("ggplot2")) {
+    install.packages("ggplot2")
+    library(ggplot2)
+  }
+  
+  if(!require("plyr")) {
+    install.packages("plyr")
+    library(plyr)
+  }
+  
+  if(!require("stringr")) {
+    install.packages("stringr")
+    library(stringr)
+  }
+  
+  if(!require("gridExtra")) {
+    install.packages("gridExtra")
+    library(gridExtra)
+  }
+  
+  if(!require("asbio")) {
+    install.packages("asbio")
+    library(asbio)
+  }
+  
+  if(!require("fmsb")) {
+    install.packages("fmsb")
+    library(fmsb)
+  }
   
   ##using function to extract column names and change time column from factor to numeric
   parsed.data  <- extract.col(read.table(file))
@@ -503,9 +528,6 @@ plot.path <- function(toPlot) {
   
   ## replace duplicate IDs between plates with unique IDs so each worm plotted can have a distinct colour
   toPlot <- uniqueID(toPlot)
-  
-  ## generate upper title, as cannot use directly in expression() as it will not be evaluated
-  upperTitle <- paste(unique(toPlot$strain), "Path Plot")
   
   g <- ggplot(data=toPlot, aes(x=adj_x, y=adj_y)) + 
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
