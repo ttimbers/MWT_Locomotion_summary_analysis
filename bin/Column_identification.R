@@ -5,7 +5,8 @@
 main <- function() {
   
   args <- commandArgs(trailingOnly = TRUE)
-  file <- args[1]  
+  file <- args[1]
+  controlStrain <- args[3]
   
   ## Check if required packages are installed; if they are they will be loaded; if not they will be installed and loaded
   
@@ -41,6 +42,11 @@ main <- function() {
   
   ##using function to extract column names and change time column from factor to numeric
   parsed.data  <- extract.col(read.table(file))
+  
+  ## make control strain the first factor so it is plotted first 
+  parsed.data$strain <- setControlStrain(controlStrain)
+  
+  if (is.null(parsed.data$strain)) stop("Invalid strain name given; stopped script.")
   
   ## save data as a file
   write.table(parsed.data, file=paste(file,".parsed", sep=""), col.names=TRUE, row.names=FALSE, quote=FALSE, append=FALSE)
@@ -88,11 +94,14 @@ main <- function() {
   ## PATH PLOT
   ##=========================================================================================================
   
-  ## use function to change worm x and y positions to start from 0 (over 530 to 590s)
-  adjusted.path.data <- adjusted.path(parsed.data)
+  ## use function to change worm x and y positions from 100 to 160s to start from 0
+  adjusted.path.data.start <- adjusted.path(parsed.data, 100, 160)
+  
+  ## use function to change worm x and y positions from 530 to 560s to start from 0
+  adjusted.path.data.end <- adjusted.path(parsed.data, 530, 560)
   
   ## make and save path plot of each worm from 530 to 590s (separated by strain, starting at (0,0))
-  plot.strains(adjusted.path.data)
+  plot.strains(adjusted.path.data.start, adjusted.path.data.end)
   
   ##=========================================================================================================
   ## RADAR PLOT (MEDIAN)
@@ -103,6 +112,10 @@ main <- function() {
   
 }
 
+
+##=========================================================================================================
+## FUNCTION TO PARSE DATA
+##=========================================================================================================
 
 ##function for creating choreography output file with column names
 
@@ -127,7 +140,33 @@ extract.col <- function(data){
   
 }
 
-##function for plotting time vs. speed
+##=========================================================================================================
+## CONTROL STRAIN FUNCTION
+##=========================================================================================================
+
+## given a control strain, return the parsed data strains with the control strain as the first factor
+setControlStrain <- function(cstrain) {
+  out <- tryCatch(
+{
+  strainLevels <- levels(parsed.data$strain)
+  if (!cstrain %in% strainLevels) stop()
+  strainLevels <- strainLevels[strainLevels != cstrain]
+  strainLevels <- append(cstrain, strainLevels)
+  
+  factor(parsed.data$strain, levels = strainLevels)
+},
+error=function(cond) {
+  message(paste(cstrain, "is not a valid strain."))
+  message("Please call the RScript again with a valid control strain.")
+  message(paste("Valid strains include:", toString(unique(parsed.data$strain))))    
+}
+  )    
+return(out)
+}
+
+##=========================================================================================================
+## FUNCTION FOR PLOTTING TIME VS SPEED
+##=========================================================================================================
 
 plot.speed.time <- function(dataframe) {
   
@@ -166,33 +205,6 @@ plot.speed.time <- function(dataframe) {
 }
 
 ##=========================================================================================================
-## HELPER FUNCTION TO PLOT N2 FIRST
-##=========================================================================================================
-
-## given dataframe with worm strains, return same dataframe with N2 as the first factor in the levels
-n2.first <- function(dataframe) {
-  
-  ## get strain levels
-  strainLevels <- levels(dataframe$strain) 
-  
-  ## if strains includes n2, make this the first factor in levels so it is plotted first
-  if ("n2" %in% strainLevels) {                     
-    strainLevels <- strainLevels[strainLevels != "n2"]         # remove n2
-    strainLevels <- append("n2", strainLevels)                 # readd at start
-    levels(dataframe$strain) <- strainLevels
-  }
-  
-  ## if strains includes N2, make this the first factor in levels so it is plotted first
-  if ("N2" %in% strainLevels) {                     
-    strainLevels <- strainLevels[strainLevels != "N2"]          # remove N2
-    strainLevels <- append("N2", strainLevels)                  # readd at start
-    levels(dataframe$strain) <- strainLevels
-  }
-  
-  return(dataframe)
-}
-
-##=========================================================================================================
 ## MEDIAN CONFIDENCE INTERVAL HELPER FUNCTIONS
 ##=========================================================================================================
 
@@ -224,12 +236,6 @@ mean.size <- function(dataframe) {
   
   ## aggregate mean area, length, and width with each worm (ID), retaining strain and plate info
   mean.subset <- aggregate(cbind(area, length, width) ~ ID + strain + plate, time.subset, mean)  
-  
-  ## get levels of strain
-  strainLevels <- levels(mean.subset$strain)
-  
-  ## make n2 first factor so it is plotted first
-  mean.subset <- n2.first(mean.subset)
   
   return(mean.subset)
   
@@ -339,9 +345,6 @@ aggregatePathlength <- function(dataframe) {
   pathlength.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
                              pathlen = pathlength(pathlen))
   
-  ## make n2 first factor so it is plotted first
-  pathlength.output <- n2.first(pathlength.output)
-  
   ## drop rows with NA pathlengths
   pathlength.output <- na.omit(pathlength.output)
   
@@ -418,9 +421,6 @@ aggregateDistance <- function(dataframe) {
   aggDist.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
                           distance = totalDistance(cbind(loc_x,loc_y)))
   
-  ## make n2 first factor so it is plotted first
-  aggDist.output <- n2.first(aggDist.output)
-  
   return(aggDist.output)
   
 }
@@ -470,18 +470,15 @@ adjust.y <- function(df.y) {
 ## grouped by ID, strain, and plate.
 ## The x and y locations are adjusted for each worm so that it's initial position is (0,0)
 ## and following positions are adjusted accordingly
-adjusted.path <- function(dataframe) {
+adjusted.path <- function(dataframe, t1, t2) {
   
-  ## subset parsed data to times between 530 and 590 seconds
-  time.subset <- dataframe[dataframe$time > 530 & dataframe$time < 590, ]
+  ## subset parsed data to times between t1 and t2 seconds
+  time.subset <- dataframe[dataframe$time > t1 & dataframe$time < t2, ]
   
   ## transform dataframe, by shifting x and y values to start from 0 for each worm (grouped by ID, plate, and strain)
   adjusted.path.output <- ddply(time.subset, cbind("ID", "plate", "strain"), transform,
                                 adj_x = adjust.x(loc_x),
                                 adj_y = adjust.y(loc_y))
-  
-  ## make n2 the first factor so it is plotted first
-  adjusted.path.output <- n2.first(adjusted.path.output)
   
   return(adjusted.path.output)
 }
@@ -524,11 +521,20 @@ uniqueID <- function(toPlot) {
 }
 
 ## given dataframe of a single strain with adjusted x and y locations, plot worm paths starting from (0,0)
-plot.path <- function(toPlot) {
+## second argument will be "start" or "end"; indicating if the plot is for 100s to 160s or for 530s to 590s
+plot.path <- function(toPlot, string) {
   
   ## replace duplicate IDs between plates with unique IDs so each worm plotted can have a distinct colour
   toPlot <- uniqueID(toPlot)
   
+  if ("start" == string) {
+    timeperiod <- "from 100s to 160s"
+  }
+  
+  if ("end" == string) {
+    timeperiod <- "from 530s to 590s"
+  }
+    
   g <- ggplot(data=toPlot, aes(x=adj_x, y=adj_y)) + 
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
           panel.background = element_rect(fill = "white"), ## make the plot background white
@@ -537,7 +543,7 @@ plot.path <- function(toPlot) {
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
           axis.title.y = element_text(size = 16, vjust = 1.3), ## change the y-axis label font to black, make larger, and move away from axis
           aspect.ratio = 1) + ## set aspect ratio to 1
-    ggtitle(bquote(atop(.(paste(unique(toPlot$strain), "Path Plot")), atop(.("from 530s to 590s"), "")))) +
+    ggtitle(bquote(atop(.(paste(unique(toPlot$strain), "Path Plot")), atop(.(timeperiod), "")))) +
     labs(x = 
            paste("Relative x position (mm)", 
                  "\n(n=" ,length(unique(toPlot$ID)), ")",
@@ -549,21 +555,35 @@ plot.path <- function(toPlot) {
 }
 
 ## given parsed data with adjusted x and y locations for ALL strains, make plots for all strains and save as single file
-plot.strains <- function(adjusted.path.output) {
-   
+plot.strains <- function(path.output.start, path.output.end) {
+  
   ## get strain levels
-  strainLevels <- levels(adjusted.path.output$strain) 
+  strainLevels <- levels(path.output.start$strain) 
   
-  #initialize list of plots as empty
-  plotList <- list()  
+  #initialize list of plots for the start period (100 - 160s) as empty
+  startplotList <- list()  
   
-  ## create path plots for each strain
+  ## initalize list of plots for the end period (530s to 590s) as empty
+  endplotList <- list()  
+  
+  ## create path plots for each strain from 100s to 160s
   for (i in 1:length(strainLevels)) {
-    toPlot <- adjusted.path.output[adjusted.path.output$strain == strainLevels[i],]   # subset adjusted path data for strain
-    plotName <- paste("plot", i, sep="")   # make arbitrary unique plot name
-    assign(plotName, plot.path(toPlot))    # assign path plot of specific strain to plot name
-    plotList[[i]] <- get(plotName)         # add plot to list of plots
+    toPlot <- path.output.start[path.output.start$strain == strainLevels[i],]   # subset adjusted path data for strain
+    plotName <- paste("startplot", i, sep="")   # make arbitrary unique plot name
+    assign(plotName, plot.path(toPlot, "start"))    # assign path plot of specific strain to plot name
+    startplotList[[i]] <- get(plotName)         # add plot to list of plots
   }
+  
+  ## create path plots for each strain from 530s to 590s
+  for (i in 1:length(strainLevels)) {
+    toPlot <- path.output.end[path.output.end$strain == strainLevels[i],]   # subset adjusted path data for strain
+    plotName <- paste("endplot", i, sep="")   # make arbitrary unique plot name
+    assign(plotName, plot.path(toPlot, "end"))    # assign path plot of specific strain to plot name
+    endplotList[[i]] <- get(plotName)         # add plot to list of plots
+  }
+  
+  ## add start plots and end plot lists together
+  plotList <- c(startplotList, endplotList)
   
   ## make arguments (with list of plots) to be arranged by gridExtra
   arrangeArgs <- c(plotList, ncol=2)
@@ -584,7 +604,6 @@ plot.strains <- function(adjusted.path.output) {
 makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output) {
   
   ## get strains from mean.size.output (could have used path/distance dataframes, should all be the same)
-  ## NOTE: n2 should already be the first level and thus plotted first, as n2.first(df) was called when creating mean.size.output
   strainLevels <- levels(mean.size.output$strain)
   
   ## we will create a dataframe with features as columns (ie width, pathlength, distance, speed, etc.), 
@@ -648,7 +667,7 @@ makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output) {
     ## These must be adjusted if the number of features plotted changes.
   })
   
-  dev.off()  
+  dev.off()
 }
 
 main()

@@ -9,6 +9,10 @@
 ##		$2: webdav server URL 
 ##		$3: path on webdav where .zip folders should be saved (including where it is 
 ##			mounted on your computer (e.g /path_on_webdav)
+##    $4: control strain, which will be plotted first and used as a baseline for 
+##      radarplot strain comparisons. 
+##      NOTE: input is case-sensitive!
+
 
 
 ## Set amount of memory to be devoted to running Choreography
@@ -51,4 +55,4 @@ cd ../..
 ## call R script with the command line using an argument for the filename we want to parse
 ## After data is parsed, figures are plotted and stats are done and saved in results 
 ## directory
-rscript bin/Column_identification.R data/chore_data/merged.file 
+rscript bin/Column_identification.R data/chore_data/merged.file $4
