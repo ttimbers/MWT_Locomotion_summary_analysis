@@ -91,7 +91,7 @@ main <- function() {
   
   ## make dataframe with adjusted path data from 100 to 160s (where (x,y) is shifted to (0,0) 
   ## at the start of the time interval), and from 530 to 590s
-  adjusted.path.data <- adjusted.path(parsed.data, 100, 105, 530, 535)
+  adjusted.path.data <- adjusted.path(parsed.data, 100, 160, 530, 590)
   
   ## replace duplicate IDs between plates with unique IDs
   adjusted.path.data <- uniqueID(adjusted.path.data)
