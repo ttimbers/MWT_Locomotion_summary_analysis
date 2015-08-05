@@ -6,7 +6,7 @@ main <- function() {
   
   args <- commandArgs(trailingOnly = TRUE)
   file <- args[1]
-  controlStrain <- args[3]
+  controlStrain <- args[2]
   
   ## Check if required packages are installed; if they are they will be loaded; if not they will be installed and loaded
   
@@ -14,38 +14,37 @@ main <- function() {
     install.packages("ggplot2")
     library(ggplot2)
   }
-  
   if(!require("plyr")) {
     install.packages("plyr")
     library(plyr)
   }
-  
   if(!require("stringr")) {
     install.packages("stringr")
     library(stringr)
   }
-  
   if(!require("asbio")) {
     install.packages("asbio")
     library(asbio)
   }
-  
   if(!require("fmsb")) {
     install.packages("fmsb")
     library(fmsb)
   }
   
-  ##using function to extract column names and change time column from factor to numeric
+  ##use function to extract column names and change time column from factor to numeric
   parsed.data  <- extract.col(read.table(file))
-  
-  ## make control strain the first factor so it is plotted first 
-  parsed.data$strain <- setControlStrain(controlStrain)
-  
-  if (is.null(parsed.data$strain)) stop("Invalid strain name given; stopped script.")
   
   ## save data as a file
   write.table(parsed.data, file=paste(file,".parsed", sep=""), col.names=TRUE, row.names=FALSE, quote=FALSE, append=FALSE)
   
+  ## make control strain the first factor so it is plotted first 
+  ## if control strain is invalid stop script
+  if (!class(setControlStrain(controlStrain)) == "factor") {
+    stop("Invalid strain.")
+  } else {
+    parsed.data$strain <- setControlStrain(controlStrain)
+  }  
+
   ## call function to call speed vs. time
   plot.speed.time(parsed.data)
   
@@ -141,6 +140,7 @@ extract.col <- function(data){
 ##=========================================================================================================
 
 ## given a control strain, return the parsed data strains with the control strain as the first factor
+
 setControlStrain <- function(cstrain) {
   out <- tryCatch(
 {
@@ -153,8 +153,7 @@ setControlStrain <- function(cstrain) {
 },
 error=function(cond) {
   message(paste(cstrain, "is not a valid strain."))
-  message("Please call the RScript again with a valid control strain.")
-  message(paste("Valid strains include:", toString(unique(parsed.data$strain))))    
+  message(paste("Valid strains include:", toString(unique(parsed.data$strain))))
 }
   )    
 return(out)
