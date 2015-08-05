@@ -36,14 +36,18 @@ main <- function() {
   
   ## save data as a file
   write.table(parsed.data, file=paste(file,".parsed", sep=""), col.names=TRUE, row.names=FALSE, quote=FALSE, append=FALSE)
+    
+  ## check if control strain is valid; if invalid, prompt user to input another strain
+  ## and repeat check until valid strain is given.
+  ## If setControlStrain does not return a factor, then the control strain given was not found
+  ## in parsed.data and is thus invalid
+  while (!class(setControlStrain(controlStrain, parsed.data)) == "factor") {
+    cat("Please enter a valid control strain (without quotations): ")
+    controlStrain <- readLines(file("stdin"),1)
+  }
   
   ## make control strain the first factor so it is plotted first 
-  ## if control strain is invalid stop script
-  if (!class(setControlStrain(controlStrain)) == "factor") {
-    stop("Invalid strain.")
-  } else {
-    parsed.data$strain <- setControlStrain(controlStrain)
-  }  
+  parsed.data$strain <- setControlStrain(controlStrain, parsed.data)
 
   ## call function to call speed vs. time
   plot.speed.time(parsed.data)
@@ -139,21 +143,21 @@ extract.col <- function(data){
 ## CONTROL STRAIN FUNCTION
 ##=========================================================================================================
 
-## given a control strain, return the parsed data strains with the control strain as the first factor
-
-setControlStrain <- function(cstrain) {
+## given a control strain, return the parsed data strain factor with the control strain as the first 
+## factor/level
+setControlStrain <- function(cstrain, parsed.data) {
   out <- tryCatch(
 {
-  strainLevels <- levels(parsed.data$strain)
-  if (!cstrain %in% strainLevels) stop()
-  strainLevels <- strainLevels[strainLevels != cstrain]
-  strainLevels <- append(cstrain, strainLevels)
+  strainLevels <- levels(parsed.data$strain)                  ## get strains in parsed.data
+  if (!cstrain %in% strainLevels) stop()                      ## if control strain is not in strains throw stop()
+  strainLevels <- strainLevels[strainLevels != cstrain]       ## otherwise drop cstrain from strains
+  strainLevels <- append(cstrain, strainLevels)               ## and re-add at start of strains
   
-  factor(parsed.data$strain, levels = strainLevels)
+  factor(parsed.data$strain, levels = strainLevels)           ## returns parsed.data strain factor (upon return(out))
 },
-error=function(cond) {
-  message(paste(cstrain, "is not a valid strain."))
-  message(paste("Valid strains include:", toString(unique(parsed.data$strain))))
+error=function(cond) {                                        ## catch the stop()
+  message(paste(cstrain, "is not a valid strain."))           
+  message(paste("Valid strains include:", strainLevels))      ## print valid strains for user, do not return a factor
 }
   )    
 return(out)
