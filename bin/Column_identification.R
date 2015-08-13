@@ -8,11 +8,18 @@ main <- function() {
   file <- args[1]
   controlStrain <- args[2]
   
+  ## personal fix for R path issue; remove before commit
+  .libPaths(c("C:/Program Files/R/R-3.2.0/library","C:/Users/Quintin/Documents/R/win-library/3.2", .libPaths()))
+  
   ## Check if required packages are installed; if they are they will be loaded; if not they will be installed and loaded
   
   if(!require("ggplot2")) {
     install.packages("ggplot2")
     library(ggplot2)
+  }
+  if(!require("grid")) {
+    install.packages("grid")
+    library(fmsb)
   }
   if(!require("plyr")) {
     install.packages("plyr")
@@ -157,7 +164,7 @@ setControlStrain <- function(cstrain, parsed.data) {
 },
 error=function(cond) {                                        ## catch the stop()
   message(paste(cstrain, "is not a valid strain."))           
-  message(paste("Valid strains include:", strainLevels))      ## print valid strains for user, do not return a factor
+  message(paste("Valid strains include:", toString(strainLevels)))      ## print valid strains for user, do not return a factor
 }
   )    
 return(out)
@@ -541,7 +548,7 @@ plot.path <- function(adj.path.output) {
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
           axis.title.y = element_text(size = 16, vjust = 1.3), ## change the y-axis label font to black, make larger, and move away from axis
           aspect.ratio = 1, ## set aspect ratio to 1
-          panel.margin = unit(2, "lines")) +
+          panel.margin = unit(2, "lines")) +     ## add margin around facet panels
     ggtitle("Path Plot") +  ## set title
     labs(x = "Relative x position (mm)", 
          y = "Relative y position (mm)") +
