@@ -40,7 +40,6 @@ echo "Data was not backed up to webdav."
 else
 ## Connect to webdav (so you can backup files)
 ## you will be prompted for your webdav username and password
-## for window users, simply do "cd path of webdav driver"
 mount_webdav -i  $3 /
 
 ## zip all MWT data folders in directory to be analyzed
