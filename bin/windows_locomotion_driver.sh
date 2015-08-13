@@ -1,7 +1,14 @@
 ## This is the driver script that will call modular scripts to attack each chunk
-## of the problem
+## of the problem.
 ##
-## Set working directory to project's root directory
+## This is the Windows version of the script. 
+## It currently requires Chore.jar to be in the data folder. 
+## It also currently requires the zip command to be added to the bash shell (taken from cygwin). 
+##
+## This script will later be updated to work with Homebrew or a manually specified chore path.
+## The script will later be updated to use a built in windows shell zip command (possibly compact?).
+##
+## Before running this script, set the working directory to project's root directory.
 ##
 ## Requires the following input from the user:
 ##		$1: gigabytes of memory to be used to run Choreography (dependent upon
@@ -13,19 +20,16 @@
 ##		$4: path on webdav where .zip folders should be saved (including where it is
 ##			mounted on your computer (e.g /path_on_webdav)
 ##
-##      To run analysis without backing up to webdav server,
-##      do not provide webdav server URL ($3) and path ($4).
+##      To run analysis without backing up to webdav server, do NOT provide the following arguments:
+##		$3: webdav server URL
+##		$4: webdav path
 ##
 ## Example usage of this script from the Bash Shell - with backup to webdav
 ## (After working directory has been set to project's root directory):
-## bash bin/locomotion_driver.sh 4 N2 https://webdav.server/location folder_to_backup_to
+## bash bin/locomotion_driver.sh 1 N2 https://webdav.server/location folder_to_backup_to
 ##
 ## Example usage of this script from the Bash Shell - without backup to webdav
-## bash bin/locomotion_driver.sh 4 N2
-
-## Windows script currently requires Chore.jar to be in data folder. Update this script to have the path to Chore later.
-## It also currently requires the zip command to be added to the bash shell; taken from cygwin. Script will be updated to
-## use built in windows shell zip command later (possibly compact?).
+## bash bin/locomotion_driver.sh 1 N2
 
 ## Move into data folder; all data folders to be analyzed must be in this directory
 cd data
@@ -39,9 +43,8 @@ backed_up=false
 echo "Data was not backed up to webdav."
 else
 ## Connect to webdav (so you can backup files)
-## you will be prompted for your webdav username and password
-## for window users, simply do "cd path of webdav driver"
-mount_webdav -i  $3 /
+## User will be prompted for username and password.
+net use Z: $3
 
 ## zip all MWT data folders in directory to be analyzed
 for foldername in *; do cd $foldername; zip ../$foldername *; cd ..; done
