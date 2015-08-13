@@ -20,9 +20,8 @@
 ##		$4: path on webdav where .zip folders should be saved (including where it is
 ##			mounted on your computer (e.g /path_on_webdav)
 ##
-##      To run analysis without backing up to webdav server, do NOT provide the following arguments:
-##		$3: webdav server URL
-##		$4: webdav path
+##      To run analysis without backing up to webdav server,
+##      do not provide webdav server URL ($3) and path ($4).
 ##
 ## Example usage of this script from the Bash Shell - with backup to webdav
 ## (After working directory has been set to project's root directory):
