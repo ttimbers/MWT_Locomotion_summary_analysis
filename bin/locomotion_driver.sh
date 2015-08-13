@@ -21,7 +21,10 @@ export MWT_JAVA_OPTIONS=-Xmx$1g
 ## Connect to webdav (so you can backup files)
 ## you will be prompted for your webdav username and password
 mount_webdav -i  $2 /
-## for window users, simply do "cd path of webdav driver"
+
+## for Windows users,
+## net use Z: $2 /user:username password /persistent: YES
+
 
 ## zip all folders all MWT data folders in directory to be analyzed
 ## must be in "data" working directory 
