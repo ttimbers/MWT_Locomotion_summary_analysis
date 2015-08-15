@@ -8,9 +8,6 @@ main <- function() {
   file <- args[1]
   controlStrain <- args[2]
   
-  ## personal fix for R path issue; remove before commit
-  .libPaths(c("C:/Program Files/R/R-3.2.0/library","C:/Users/Quintin/Documents/R/win-library/3.2", .libPaths()))
-  
   ## Check if required packages are installed; if they are they will be loaded; if not they will be installed and loaded
   
   if(!require("ggplot2")) {
