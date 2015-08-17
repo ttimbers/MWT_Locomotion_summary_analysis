@@ -60,17 +60,17 @@ main <- function() {
   ## BODY SIZE PLOTS
   ##=========================================================================================================
   
-  ## use function to get mean size data for each worm (mean size data from 60 to 70s)
-  mean.size.data <- mean.size(parsed.data)
+  ## use function to get length, width, and area of each worm, averaged over 60 to 70s
+  mean.size.data <- mean.size(parsed.data, 60, 70)
   
-  ## make and save violin plot of worm area with jittered points (using mean size data)
-  violinplot.area(mean.size.data)
+  ## make and save plot of worm area (box plot overlayed with violin plot + jittered points)
+  size.plot(mean.size.data, "area", expression(Area~(mm^{2})))
   
-  ## make and save violin plot of worm length with jittered points (using mean size data)
-  violinplot.length(mean.size.data)
+  ## make and save plot of worm length (box plot overlayed with violin plot + jittered points)
+  size.plot(mean.size.data, "length", "Length (mm)")
   
-  ## make and save violin plot of worm width with jittered points (using mean size data)
-  violinplot.width(mean.size.data)
+  ## make and save plot of worm width (box plot overlayed with violin plot + jittered points)
+  size.plot(mean.size.data, "width", "Width (mm)")
   
   ##=========================================================================================================
   ## PATHLENGTH PLOT
@@ -147,8 +147,11 @@ extract.col <- function(data){
 ## CONTROL STRAIN FUNCTION
 ##=========================================================================================================
 
-## given a control strain, return the parsed data strain factor with the control strain as the first 
-## factor/level
+
+## input: control strain as a string,
+## output: returns the  strain factor of parsed data with given control strain as first level
+## If control strain is not found in parsed data, function will not return a factor and will print
+## an error message.
 setControlStrain <- function(cstrain, parsed.data) {
   out <- tryCatch(
 {
@@ -231,94 +234,73 @@ errorLower <- function(x){
 ## BODY SIZE FUNCTIONS
 ##=========================================================================================================
 
-## given parsed data return df with mean area, length, and width (from 60-70s) of each worm (including strain)
-mean.size <- function(dataframe) {
+## SUMMARY: given parsed data return df with mean area, length, and width of each worm
+## INPUT: parsedData = data with appropriate column names, with information for worm area, length, width, and time,
+##                     as well as worm ID, strain and plate.
+##                     These columns should be named as "area", "length", "width", "time", "ID", 
+##                     "strain", and "plate", respectively (without quotations).
+##        minT = lower limit of time interval to average over
+##        maxT = upper limit of time interval to average over
+## 
+## OUTPUT: A dataframe where rows consist of unique combinations of worm ID, plate, and strain
+##         (ie each row has data for a single worm).
+##         Columns include ID, plate, strain, 
+##         as well as the length, width, and area averaged over the time interval specified.
+##
+## Input data will be subsetted to the time interval specified. 
+## The width, length, and area of each worm will be averaged over this time interval.
+## In order to do this for each worm, the data is aggregated by worm ID, strain, and plate
+## This is necessary as worm IDs are not unique between plates and strains.
+mean.size <- function(parsedData, minT, maxT) {
   
-  ## subset parsed data to times between 60 seconds and 70 seconds
-  time.subset <- dataframe[dataframe$time < 70 & dataframe$time > 60, ]
+  ## subset parsed data to times between minT and maxT
+  time.subset <- parsedData[parsedData$time < maxT & parsedData$time > minT, ]
   
-  ## aggregate mean area, length, and width with each worm (ID), retaining strain and plate info
+  ## aggregate mean area, length, and width, grouped by ID, strain, and plate
   mean.subset <- aggregate(cbind(area, length, width) ~ ID + strain + plate, time.subset, mean)  
   
   return(mean.subset)
   
 }
 
-## given size means, make body area violin plot
-violinplot.area <- function(mean.size.output) {
+## SUMMARY: Given output of mean.size function, make a size plot for the specified observation
+##          (either length, width, or size), with the specified y label.
+## INPUT: mean.size.output = output of mean.size function: a dataframe where each row corresponds to a
+##                           a worm, with the columns ID, strain, plate, length, width, and area
+##        observation = the observation in mean.size.output to plot;
+##                      this should either be "length", "area", or "width".
+##        ylabel = The label for the y-axis, as a string.
+##                 Also accepts expressions (eg: expression(Area~(mm^{2}))).
+## OUTPUT: saves size plot in results folder as plot_observation.pdf
+size.plot <- function(mean.size.output, observation, ylabel) {
   
-  g <- ggplot(mean.size.output, aes(x = strain, y = area)) + ## plot lengths
+  ## Capitalize the observation name, eg area -> Area
+  ## Approach: get first letter, capitalize it, paste it with the rest of observation string
+  ## This is used when making the plot title
+  capitalizedObservation <- paste(toupper(substr(observation, 1, 1)),          
+                                  substr(observation, 2, nchar(observation)),  
+                                  sep = "")                                    
+  
+  g <- ggplot(mean.size.output, aes_string(x = "strain", y = observation)) + ## plot observation against strain
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
           panel.background = element_rect(fill = "white"), ## make the plot background white
           axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
           axis.title.y = element_text(size = 16, vjust = 1.3)) +  ## change the y-axis label font to black, make larger, and move away from axis
-    ggtitle("Violin Plot of Worm Area") +            ## set title
-    labs(x="Strain", y=expression(Area ~ (mm^{2}))) +     ## label the x and y axes 
+    ggtitle(paste("Violin Plot of Worm", capitalizedObservation)) +            ## set title
+    labs(x="Strain", y= ylabel) +   ## set x and y labels
     geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot    
+    geom_boxplot(outlier.size = 0)+
     geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
     scale_x_discrete(labels=  ## overlay x axis labels with # of observations
                        paste(levels(mean.size.output$strain),
                              "\n(n=",
                              table(mean.size.output$strain),
                              ")", 
-                             sep="")) +  
-    stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) +    ## add error bar for median confidence interval (95%)
-    stat_summary(fun.y=median, geom="point", size=2, color="white") ## add a median point
-  
+                             sep=""))
   #save plot
-  ggsave(file="results/violinplot_area.pdf", g, height = 5)
-}
-
-## given size means, make body length violin plot
-violinplot.length <- function(mean.size.output) {
-  
-  g <- ggplot(mean.size.output, aes(x = strain, y = length)) + ## plot lengths
-    theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
-          panel.background = element_rect(fill = "white"), ## make the plot background white
-          axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
-          axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
-          axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
-          axis.title.y = element_text(size = 16, vjust = 1.3)) +  ## change the y-axis label font to black, make larger, and move away from axis
-    ggtitle("Violin Plot of Worm Length") +            ## set title
-    labs(x="Strain", y="Length (mm)") +     ## label the x and y axes     
-    geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot    
-    geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
-    scale_x_discrete(labels=  ## overlay x axis labels with # of observations
-                       paste(levels(mean.size.output$strain),
-                             "\n(n=",table(mean.size.output$strain),")",    ## add number of observations to label on 2nd line
-                             sep="")) +  
-    stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
-    stat_summary(fun.y=median, geom="point", size=2, color="white")
-  
-  ##save plot
-  ggsave(file="results/violinplot_length.pdf", g, height = 5)
-}
-
-## make body width violin plot
-violinplot.width <- function(mean.size.output) {
-  
-  g <- ggplot(mean.size.output, aes(x = strain, y = width)) + ## plot lengths
-    theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
-          panel.background = element_rect(fill = "white"), ## make the plot background white
-          axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
-          axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
-          axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
-          axis.title.y = element_text(size = 16, vjust = 1.3)) +  ## change the y-axis label font to black, make larger, and move away from axis
-    ggtitle("Violin Plot of Worm Width") +            ## set title
-    labs(x="Strain", y="Width (mm)") +     ## label the x and y axes     
-    geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot    
-    geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
-    scale_x_discrete(labels=  ## overlay x axis labels with # of observations
-                       paste(levels(mean.size.output$strain),
-                             "\n(n=",table(mean.size.output$strain),")",    ## add number of observations to label on 2nd line
-                             sep="")) +  
-    stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
-    stat_summary(fun.y=median, geom="point", size=2, color="white")
-  
-  ##save plot
-  ggsave(file="results/violinplot_width.pdf", g, height = 5)
+  ggsave(file=paste("results/plot_", observation, ".pdf", sep=""), g, height = 5)
 }
 
 ##=========================================================================================================
