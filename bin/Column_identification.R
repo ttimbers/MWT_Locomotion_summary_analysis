@@ -64,33 +64,33 @@ main <- function() {
   mean.size.data <- mean.size(parsed.data, 60, 70)
   
   ## make and save plot of worm area (box plot overlayed with violin plot + jittered points)
-  size.plot(mean.size.data, "area", expression(Area~(mm^{2})))
+  makeBoxPlot(mean.size.data, "area", expression(Area~(mm^{2})))
   
   ## make and save plot of worm length (box plot overlayed with violin plot + jittered points)
-  size.plot(mean.size.data, "length", "Length (mm)")
+  makeBoxPlot(mean.size.data, "length", "Length (mm)")
   
   ## make and save plot of worm width (box plot overlayed with violin plot + jittered points)
-  size.plot(mean.size.data, "width", "Width (mm)")
+  makeBoxPlot(mean.size.data, "width", "Width (mm)")
   
   ##=========================================================================================================
   ## PATHLENGTH PLOT
   ##=========================================================================================================
   
   ## get pathlength data for each worm from 530 to 590s
-  pathlength.data <- aggregatePathlength(parsed.data)
+  pathlength.data <- aggregatePathlength(parsed.data, 530, 590)
   
-  ## make and save violin plot of worm pathlength data with jittered points
-  violinplot.pathlength(pathlength.data)
+  ## make and save plot of worm pathlength (box plot overlayed with violin plot + jittered points)
+  makeBoxPlot(pathlength.data, "pathlength", "Pathlength from 530 to 590s (mm)")
   
   ##=========================================================================================================
   ## TOTAL DISTANCE PLOT
   ##=========================================================================================================
   
   ## use function to get total distance data for each worm (from 530s to 590s)
-  distance.data <- aggregateDistance(parsed.data)
+  distance.data <- aggregateDistance(parsed.data, 530, 590)
   
-  ## make and save violin plot of total distances travelled with jittered points
-  violinplot.distance(distance.data)
+  ## make and save plot of worm distance travelled (box plot overlayed with violin plot + jittered points)
+  makeBoxPlot(distance.data, "distance", "Distance travelled from 530s to 590s (mm)")
   
   ##=========================================================================================================
   ## PATH PLOT
@@ -147,20 +147,22 @@ extract.col <- function(data){
 ## CONTROL STRAIN FUNCTION
 ##=========================================================================================================
 
-
-## input: control strain as a string,
-## output: returns the  strain factor of parsed data with given control strain as first level
+## INPUT:   cstrain = control strain as a string
+##          parsedData = output of extract.col; a dataframe with strain data, for which the column is named
+##                       as "strain"
+## OUTPUT:  Returns the strain factor of parsedData with given control strain as first level
+##
 ## If control strain is not found in parsed data, function will not return a factor and will print
 ## an error message.
-setControlStrain <- function(cstrain, parsed.data) {
+setControlStrain <- function(cstrain, parsedData) {
   out <- tryCatch(
 {
-  strainLevels <- levels(parsed.data$strain)                  ## get strains in parsed.data
+  strainLevels <- levels(parsedData$strain)                  ## get strains in parsed.data
   if (!cstrain %in% strainLevels) stop()                      ## if control strain is not in strains throw stop()
   strainLevels <- strainLevels[strainLevels != cstrain]       ## otherwise drop cstrain from strains
   strainLevels <- append(cstrain, strainLevels)               ## and re-add at start of strains
   
-  factor(parsed.data$strain, levels = strainLevels)           ## returns parsed.data strain factor (upon return(out))
+  factor(parsedData$strain, levels = strainLevels)           ## returns parsed.data strain factor (upon return(out))
 },
 error=function(cond) {                                        ## catch the stop()
   message(paste(cstrain, "is not a valid strain."))           
@@ -211,27 +213,7 @@ plot.speed.time <- function(dataframe) {
 }
 
 ##=========================================================================================================
-## MEDIAN CONFIDENCE INTERVAL HELPER FUNCTIONS
-##=========================================================================================================
-
-## given list of numbers return upper boundary of 95% confidence interval for the median (using ci.median method)
-errorUpper <- function(x){
-  ci <- ci.median(x)
-  text.ci <- ci[[2]]
-  upper <- text.ci[3]
-  return(upper)
-} 
-
-## given list of numbers return lower boundary of 95% confidence interval for the median (using ci.median method)
-errorLower <- function(x){ 
-  ci <- ci.median(x)
-  text.ci <- ci[[2]]
-  lower <- text.ci[2]
-  return(lower)
-} 
-
-##=========================================================================================================
-## BODY SIZE FUNCTIONS
+## BODY SIZE FUNCTION
 ##=========================================================================================================
 
 ## SUMMARY: given parsed data return df with mean area, length, and width of each worm
@@ -263,52 +245,18 @@ mean.size <- function(parsedData, minT, maxT) {
   
 }
 
-## SUMMARY: Given output of mean.size function, make a size plot for the specified observation
-##          (either length, width, or size), with the specified y label.
-## INPUT: mean.size.output = output of mean.size function: a dataframe where each row corresponds to a
-##                           a worm, with the columns ID, strain, plate, length, width, and area
-##        observation = the observation in mean.size.output to plot;
-##                      this should either be "length", "area", or "width".
-##        ylabel = The label for the y-axis, as a string.
-##                 Also accepts expressions (eg: expression(Area~(mm^{2}))).
-## OUTPUT: saves size plot in results folder as plot_observation.pdf
-size.plot <- function(mean.size.output, observation, ylabel) {
-  
-  ## Capitalize the observation name, eg area -> Area
-  ## Approach: get first letter, capitalize it, paste it with the rest of observation string
-  ## This is used when making the plot title
-  capitalizedObservation <- paste(toupper(substr(observation, 1, 1)),          
-                                  substr(observation, 2, nchar(observation)),  
-                                  sep = "")                                    
-  
-  g <- ggplot(mean.size.output, aes_string(x = "strain", y = observation)) + ## plot observation against strain
-    theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
-          panel.background = element_rect(fill = "white"), ## make the plot background white
-          axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
-          axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
-          axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
-          axis.title.y = element_text(size = 16, vjust = 1.3)) +  ## change the y-axis label font to black, make larger, and move away from axis
-    ggtitle(paste("Violin Plot of Worm", capitalizedObservation)) +            ## set title
-    labs(x="Strain", y= ylabel) +   ## set x and y labels
-    geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot    
-    geom_boxplot(outlier.size = 0)+
-    geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
-    scale_x_discrete(labels=  ## overlay x axis labels with # of observations
-                       paste(levels(mean.size.output$strain),
-                             "\n(n=",
-                             table(mean.size.output$strain),
-                             ")", 
-                             sep=""))
-  #save plot
-  ggsave(file=paste("results/plot_", observation, ".pdf", sep=""), g, height = 5)
-}
-
 ##=========================================================================================================
 ## PATHLENGTH FUNCTIONS
 ##=========================================================================================================
 
-## Given list of pathlengths, return total change in pathlength from beginning to end of list
-## ie: find pathlength from 530s to 590s by subtracting pathlength at 530s from pathlength at 590s
+## SUMMARY: Given a a vector of pathlengths, return change in pathlength between end and beginning of vector
+##          eg: find pathlength from 530s to 590s by subtracting pathlength at 530s from pathlength at 590s
+## INPUT: pathlens = vector of numbers, where each number is a pathlength. The first number should be
+##                   the first pathlength, and the last number should be the last pathlength.
+## OUTPUT: Last pathlength - first pathlength (change in pathlength), or NA if any pathlengths are missing.
+##
+## If any pathlengths are missing in the vector, the change in pathlength cannot be calculated, 
+## as the next number after the missing pathlength will begin at 0.
 pathlength <- function(pathlens) {
   
   if (any(is.na(pathlens))) {    ## if there are any missing pathlengths, we cannot find the pathlength over the time interval,
@@ -316,19 +264,35 @@ pathlength <- function(pathlens) {
   }
   
   else {
-    return(pathlens[length(pathlens)] - pathlens[1])  ## subtract final pathlength (at 590s) from initial pathlength at 530s
+    return(pathlens[length(pathlens)] - pathlens[1])  ## subtract final pathlength from initial pathlength
   }
 }
 
-## given parsed data return data frame with pathlength (from 530 - 590s) for each worm, with ID, strain, and plate
-aggregatePathlength <- function(dataframe) {
+## SUMMARY: given parsed data return data frame with pathlength for each worm over specified time interval
+## INPUT: parsedData = data with appropriate column names, with information for worm pathlength, ID, strain and plate.
+##                     These columns should be named as "pathlength", "ID", "strain", and "plate", respectively.
+##        minT = lower limit of time interval to find pathlength over
+##        maxT = upper limit of time interval to find pathlength over
+## 
+## OUTPUT: A dataframe where rows consist of unique combinations of worm ID, plate, and strain
+##         (ie each row has data for a single worm).
+##         Columns include ID, plate, strain, 
+##         as well as the pathlength calculated over the time interval specified.
+##
+## Input data will be subsetted to the time interval specified. 
+## The pathlength for each worm will be calculated over this time interval.
+## In order to do this for each worm, the data is aggregated by worm ID, strain, and plate
+## This is necessary as worm IDs are not unique between plates and strains.
+## The helper function pathlength is used to calculate pathlength.
+
+aggregatePathlength <- function(parsedData, minT, maxT) {
   
-  ## subset parsed data to times between 530 and 590 seconds
-  time.subset <- dataframe[dataframe$time > 530 & dataframe$time < 590, ]
+  ## subset parsed data to times between minT and max T
+  time.subset <- parsedData[parsedData$time > minT & parsedData$time < maxT, ]
   
   ## aggregate data with pathlength function, grouping by ID, strain, and plate
   pathlength.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
-                             pathlen = pathlength(pathlen))
+                             pathlength = pathlength(pathlen))
   
   ## drop rows with NA pathlengths
   pathlength.output <- na.omit(pathlength.output)
@@ -337,37 +301,14 @@ aggregatePathlength <- function(dataframe) {
   
 }
 
-## given mean pathlength data make violin plot
-violinplot.pathlength <- function(aggPath.output) {
-  
-  g <- ggplot(aggPath.output, aes(x = strain, y = pathlen)) + ## plot pathlengths
-    theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
-          panel.background = element_rect(fill = "white"), ## make the plot background white
-          axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
-          axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
-          axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
-          axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
-    ggtitle("Violin Plot of Worm Pathlength") +            ## set title
-    labs(x="Strain", y= "Pathlength from 530s to 590s (mm)") +     ## label the x and y axes 
-    geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot
-    geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
-    scale_x_discrete(labels=  ## overlay x axis labels with # of observations
-                       paste(levels(aggPath.output$strain),
-                             "\n(n=",table(aggPath.output$strain),")",    ## add number of observations to label on 2nd line
-                             sep="")) +  
-    stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
-    stat_summary(fun.y=median, geom="point", size=2, color="white")
-  
-  #save plot
-  ggsave(file="results/violinplot_pathlength.pdf", g, height = 5)
-}
-
 ##=========================================================================================================
 ## FUNCTIONS FOR TOTAL DISTANCE TRAVELLED
 ##=========================================================================================================
 
-## Given matrix or df of loc_x and loc_y, return total distance
-## quicker implementation
+## SUMMARY: Given matrix of x and y points, return the total distance between each consecutive point
+## INPUT: xy = matrix with x values in first column, and y values in 2nd column,
+##             where each row corresponds to a point (x,y)
+## OUTPUT: total distance between each consecutive point
 totalDistance <- function(xy) {
   
   previous.x <- xy[1,1]      ## initiate previous x and y as first x and y values
@@ -390,11 +331,27 @@ totalDistance <- function(xy) {
   return(total)
 }
 
-## given parsed data return data frame with total distance travelled (from 530 - 590s) for each worm, with ID, strain, and plate
-aggregateDistance <- function(dataframe) {
+## SUMMARY: given parsed data return data frame with total distance travelled over specified time interval
+## INPUT: parsedData = data with appropriate column names, with information for worm x-location, y-location, 
+##                     ID, strain and plate.
+##                     These columns should be named as "loc_x", "loc_y", "ID", "strain", and "plate", respectively.
+##        minT = lower limit of time interval to find distance travelled over
+##        maxT = upper limit of time interval to find distance travelled over
+## 
+## OUTPUT: A dataframe where rows consist of unique combinations of worm ID, plate, and strain
+##         (ie each row has data for a single worm).
+##         Columns include ID, plate, strain, 
+##         as well as the distance travelled, calculated over the time interval specified.
+##
+## Input data will be subsetted to the time interval specified. 
+## The distance travelled for each worm will be calculated over this time interval.
+## In order to do this for each worm, the data is aggregated by worm ID, strain, and plate
+## This is necessary as worm IDs are not unique between plates and strains.
+## The helper function totalDistance is used to calculate the distance travelled.
+aggregateDistance <- function(parsedData, minT, maxT) {
   
-  ## subset parsed data to times between 530 and 590 seconds
-  time.subset <- dataframe[dataframe$time > 530 & dataframe$time < 590, ]
+  ## subset parsed data to times between minT and maxT seconds
+  time.subset <- parsedData[parsedData$time > minT & parsedData$time < maxT, ]
   
   ## aggregate data with distance function, grouping by ID, strain, and plate
   aggDist.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
@@ -404,29 +361,46 @@ aggregateDistance <- function(dataframe) {
   
 }
 
-## given dataframe of aggregated worm distances make violin plot
-violinplot.distance <- function(aggDist.output) {
+##=========================================================================================================
+## BOXPLOT/VIOLINPLOT/JITTERED POINT PLOT FUNCTION
+##=========================================================================================================
+
+## SUMMARY: Generates figure with boxplot, violin plot and jittered points for a given observation plotted against strain,
+##          using the specified y-axis label.
+## INPUT: dataframe = A dataframe with a strain column titled "strain" and another column with a specified observation.
+##        observation = the observation to be plotted again strain (given as a string). Examples include "pathlength" and "width".
+##        ylabel = The label for the y-axis, as a string.
+##                 Also accepts expressions (eg: expression(Area~(mm^{2}))).
+## OUTPUT: saves plot in results folder as plot_observation.pdf
+makeBoxPlot <- function(dataframe, observation, ylabel) {
   
-  g <- ggplot(aggDist.output, aes(x = strain, y = distance)) + ## plot distances for each strain
+  ## Capitalize the observation name, for example "area" to "Area"
+  ## Approach: get first letter, capitalize it, paste it with the rest of observation string
+  ## This is used when making the plot title
+  capitalizedObservation <- paste(toupper(substr(observation, 1, 1)),          
+                                  substr(observation, 2, nchar(observation)),  
+                                  sep = "")                                    
+  
+  g <- ggplot(dataframe, aes_string(x = "strain", y = observation)) + ## plot observation against strain
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
           panel.background = element_rect(fill = "white"), ## make the plot background white
           axis.text.x=element_text(colour="black", size = 12), ## change the x-axis values font to black
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
-          axis.title.y = element_text(size = 16, vjust = 1.3)) + ## change the y-axis label font to black, make larger, and move away from axis
-    ggtitle("Total Distance Travelled") +            ## set title
-    labs(x="Strain", y= "Distance travelled from 530s to 590s (mm)") +     ## label the x and y axes 
-    geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot
+          axis.title.y = element_text(size = 16, vjust = 1.3)) +  ## change the y-axis label font to black, make larger, and move away from axis
+    ggtitle(paste("Worm", capitalizedObservation)) +            ## set title
+    labs(x="Strain", y= ylabel) +   ## set x and y labels
+    geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot    
+    geom_boxplot(outlier.size = 0)+
     geom_jitter(alpha = 0.7, position = position_jitter(width = 0.05), size = 1.5, colour="gray50") +  ## overlay jitter plot
     scale_x_discrete(labels=  ## overlay x axis labels with # of observations
-                       paste(levels(aggDist.output$strain),
-                             "\n(n=",table(aggDist.output$strain),")",    ## add number of observations to label on 2nd line
-                             sep="")) +  
-    stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) + 
-    stat_summary(fun.y=median, geom="point", size=2, color="white")
-  
-  ##save plot
-  ggsave(file="results/violinplot_totalDistance.pdf", g, height = 5)
+                       paste(levels(dataframe$strain),
+                             "\n(n=",
+                             table(dataframe$strain),
+                             ")", 
+                             sep=""))
+  #save plot
+  ggsave(file=paste("results/plot_", observation, ".pdf", sep=""), g, height = 5)
 }
 
 ##=========================================================================================================
