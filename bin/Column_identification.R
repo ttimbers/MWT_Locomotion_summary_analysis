@@ -80,7 +80,7 @@ main <- function() {
   pathlength.data <- aggregatePathlength(parsed.data, 530, 590)
   
   ## make and save plot of worm pathlength (box plot overlayed with violin plot + jittered points)
-  makeBoxPlot(pathlength.data, "pathlength", "Pathlength from 530 to 590s (mm)")
+  makeBoxPlot(pathlength.data, "pathlength", "Pathlength (mm)", "from 530 to 590s")
   
   ##=========================================================================================================
   ## TOTAL DISTANCE PLOT
@@ -90,7 +90,7 @@ main <- function() {
   distance.data <- aggregateDistance(parsed.data, 530, 590)
   
   ## make and save plot of worm distance travelled (box plot overlayed with violin plot + jittered points)
-  makeBoxPlot(distance.data, "distance", "Distance travelled from 530s to 590s (mm)")
+  makeBoxPlot(distance.data, "distance", "Distance (mm)", "from 530 to 590s")
   
   ##=========================================================================================================
   ## PATH PLOT
@@ -368,13 +368,14 @@ aggregateDistance <- function(parsedData, minT, maxT) {
 ##=========================================================================================================
 
 ## SUMMARY: Generates figure with boxplot, violin plot and jittered points for a given observation plotted against strain,
-##          using the specified y-axis label.
+##          using the specified y-axis label, and an optional subtitle.
 ## INPUT: dataframe = A dataframe with a strain column titled "strain" and another column with a specified observation.
 ##        observation = the observation to be plotted against strain (given as a string). Examples include "pathlength" and "width".
 ##        ylabel = The label for the y-axis, as a string.
 ##                 Also accepts expressions (eg: expression(Area~(mm^{2}))).
+##        subtitle = subtitle for plot; this argument is optional.
 ## OUTPUT: saves plot in results folder as plot_observation.pdf
-makeBoxPlot <- function(dataframe, observation, ylabel) {
+makeBoxPlot <- function(dataframe, observation, ylabel, subtitle) {
   
   ## Capitalize the observation name, for example "area" to "Area"
   ## Approach: get first letter, capitalize it, paste it with the rest of observation string
@@ -390,7 +391,6 @@ makeBoxPlot <- function(dataframe, observation, ylabel) {
           axis.text.y=element_text(colour="black", size = 12), ## change the y-axis values font to black and make larger
           axis.title.x = element_text(size = 16, vjust = -0.2), ## change the x-axis label font to black, make larger, and move away from axis
           axis.title.y = element_text(size = 16, vjust = 1.3)) +  ## change the y-axis label font to black, make larger, and move away from axis
-    ggtitle(paste("Worm", capitalizedObservation)) +            ## set title
     labs(x="Strain", y= ylabel) +   ## set x and y labels
     geom_violin(alpha=0.8, color="gray", fill='#F0FFFF') +  ## overlay violin plot    
     geom_boxplot(outlier.size = 0)+
@@ -401,6 +401,15 @@ makeBoxPlot <- function(dataframe, observation, ylabel) {
                              table(dataframe$strain),
                              ")", 
                              sep=""))
+  
+  if (missing(subtitle)) {                                      ## if subtitle argument is missing
+    g <- g + ggtitle(paste("Worm", capitalizedObservation))     ## simply make title
+  } else {
+    g <- g + ggtitle(bquote(atop(.(paste("Worm", capitalizedObservation)), atop(.(subtitle), ""))))
+  }                                         ## otherwise make title with subtitle
+                                            ## note that bquote is used to get the title and subtitle values
+                                            ## otherwise ggtitle uses them as strings and does not refer to the object values
+  
   #save plot
   ggsave(file=paste("results/plot_", observation, ".pdf", sep=""), g, height = 5)
 }
