@@ -98,7 +98,8 @@ main <- function() {
   
   ## make dataframe with adjusted path data from 100 to 160s (where (x,y) is shifted to (0,0) 
   ## at the start of the time interval), and from 530 to 590s
-  adjusted.path.data <- adjusted.path(parsed.data, 100, 160, 530, 590)
+  adjusted.path.data <- rbind(adjusted.path(multistrainparsed, 100, 160), 
+                              adjusted.path(multistrainparsed, 530, 590))
   
   ## replace duplicate IDs between plates with unique IDs
   adjusted.path.data <- uniqueID(adjusted.path.data)
@@ -315,8 +316,9 @@ totalDistance <- function(xy) {
   previous.y <- xy[1,2]     
   total <- 0                 ## initiate distance as 0
   
-  for (i in 1:nrow(xy)) { ## use a for loop to go through each row of matrix (corresponding to an x,y point)
+  for (i in 2:nrow(xy)) { ## use a for loop to go through each row of matrix (corresponding to an x,y point)
     ## and calculate euclidean distance between each point and the previous point
+    ## start at 2 because we initialized previous.x and previous.y with the first values
     
     diff.x <- xy[i,1] - previous.x  ## get difference between current x position and previous x position
     diff.y <- xy[i,2] - previous.y
@@ -368,7 +370,7 @@ aggregateDistance <- function(parsedData, minT, maxT) {
 ## SUMMARY: Generates figure with boxplot, violin plot and jittered points for a given observation plotted against strain,
 ##          using the specified y-axis label.
 ## INPUT: dataframe = A dataframe with a strain column titled "strain" and another column with a specified observation.
-##        observation = the observation to be plotted again strain (given as a string). Examples include "pathlength" and "width".
+##        observation = the observation to be plotted against strain (given as a string). Examples include "pathlength" and "width".
 ##        ylabel = The label for the y-axis, as a string.
 ##                 Also accepts expressions (eg: expression(Area~(mm^{2}))).
 ## OUTPUT: saves plot in results folder as plot_observation.pdf
@@ -407,56 +409,56 @@ makeBoxPlot <- function(dataframe, observation, ylabel) {
 ## PATHPLOT FUNCTIONS
 ##=========================================================================================================
 
-## given dataframe with x locations, adjust initial x to 0 and following x-s accordingly
-adjust.x <- function(df.x) {
-  df.x <- df.x - df.x[1]      ## subtract initial x from every x in dataframe
-  return(df.x)
+## SUMMARY: given vector of numbers, subtract first number from every number in vector
+## INPUT: vector of class numeric
+## OUTPUT: vector of class numeric
+## This is a helper function used to shift worm positions to start from 0.
+## "von" stands for vector of numbers
+adjust.n <- function(von) {
+  von <- von - von[1]    
+  return(von)
 }
 
-## given dataframe with y locations, adjust initial y to 0 and following y's accordingly
-adjust.y <- function(df.y) {
-  df.y <- df.y - df.y[1]     ## subtract initial y from every y in dataframe
-  return(df.y)
-}
-
-## The x and y locations are adjusted for each worm so that it's initial position is (0,0)
-## and following positions are adjusted accordingly
-adjusted.path <- function(dataframe, t1, t2, t3, t4) {
+## SUMMARY: given parsed data, return a dataframe with adjusted x and y positions of each worm so that its
+##          initial position is (0,0), for the time interval specified
+## INPUT: parsedData = data with appropriate column names, with information for worm x-location, y-location, 
+##                     ID, strain and plate.
+##                     These columns should be named as "loc_x", "loc_y", "ID", "strain", and "plate", respectively.
+##        minT = lower limit of time interval to adjust positions over
+##        maxT = lower limit of time interval to adjust positions over
+adjusted.path <- function(parsedData, minT, maxT) {
   
   ## subset parsed data to times between t1 and t2 seconds
-  time.subset.start <- dataframe[dataframe$time > t1 & dataframe$time < t2, ]
+  time.subset <- parsedData[parsedData$time > minT & parsedData$time < maxT, ]
   
-  # transform dataframe, by shifting x and y values to start from 0 for each worm (grouped by ID, plate, and strain)
-  adjusted.path.start <- ddply(time.subset.start, cbind("ID", "plate", "strain"), here(transform),
-                               adj_x = adjust.x(loc_x),
-                               adj_y = adjust.y(loc_y),
-                               timeperiod = paste(t1, "s to ", t2, "s", sep = ""))
+  # summarize dataframe, by shifting x and y values to start from 0 for each worm (grouped by ID, plate, and strain)
+  adjusted.path.output <- ddply(time.subset, cbind("ID", "plate", "strain"), summarize,
+                                adj_x = adjust.n(loc_x),
+                                adj_y = adjust.n(loc_y))
   
-  ## subset parsed data to times between t3 and t4 seconds
-  time.subset.end <- dataframe[dataframe$time > t3 & dataframe$time < t4, ]
-  
-  # transform dataframe, by shifting x and y values to start from 0 for each worm (grouped by ID, plate, and strain)
-  adjusted.path.end <- ddply(time.subset.end, cbind("ID", "plate", "strain"), here(transform),
-                             adj_x = adjust.x(loc_x),
-                             adj_y = adjust.y(loc_y),
-                             timeperiod = paste(t3, "s to ", t4, "s", sep = ""))
-  
-  adjusted.path.output <- rbind(adjusted.path.start, adjusted.path.end)
+  # Add column with info on time period
+  adjusted.path.output$timeperiod <- paste(minT, "s to ", maxT, "s", sep = "")
   
   return(adjusted.path.output)
 }
 
-## given dataframe of adjusted x and y locations, plate, strain, and time period, replace duplicate IDs between plates with unique IDs
-## this is necessary to give each worm a unique colour on the plot (by ID), as well as to count the number of unique worms plotted
+## SUMMARY: Replaces duplicate worm IDs between plates with new IDs
+## INPUT: adj.path.output = parsed data with adjusted x and y locations, plate, and strain
+##                          columns should be named as "adj_x", "adj_y", "plate", and "strain", respectively.
+## OUTPUT: the input dataframe with duplicate IDs replaced with random IDs
+## This is necessary to give each worm a unique colour on the plot (by ID), as well as to count the number of unique worms plotted.
+## Note that time period is not included as a grouping factor when finding duplicate IDs, as the same worm (and thus same ID) may be
+## tracked in multiple time periods.
 uniqueID <- function(adj.path.output) {
   
   ## group by ID, plate and strain, and aggregate ID by mean (IDs should be identical in each grouping)
-  groups <- ddply(adj.path.output, cbind("ID", "plate", "strain", "timeperiod"), summarize, ID = mean(ID))  
+  groups <- ddply(adj.path.output, cbind("ID", "plate", "strain"), summarize, ID = mean(ID))  
   
-  ## find aggregated combinations of ID + plate + strain + timeperiod that have duplicate IDs (different plates might have duplicate IDs)
+  ## find aggregated combinations of ID + plate + strain that have duplicate IDs (different plates might have duplicate IDs)
+  ## note that we do not include timeperiod here, as the same worm may be tracked at different times giving it the same ID
   duplicateRows <- groups[duplicated(groups$ID),]  
   
-  ## if there are duplicate IDs, replace the IDs in adj.path.output with a new unique ID (for each grouping of plate+strain+id+timeperiod)
+  ## if there are duplicate IDs, replace the IDs in adj.path.output with a new unique ID (for each grouping of plate+strain+id)
   if (nrow(duplicateRows) > 0) {              
     
     numberDuplicates <- nrow(duplicateRows)
@@ -467,10 +469,8 @@ uniqueID <- function(adj.path.output) {
       plate <- duplicateRow$plate
       strain <- duplicateRow$strain
       ID <- duplicateRow$ID
-      timeperiod <- duplicateRow$timeperiod
       
-      adj.path.output[adj.path.output$plate == plate & adj.path.output$strain == strain & adj.path.output$ID == ID &
-                        adj.path.output$timeperiod == timeperiod,]$ID <- runif(1)
+      adj.path.output[adj.path.output$plate == plate & adj.path.output$strain == strain & adj.path.output$ID == ID,]$ID <- runif(1)
     }
     
     ## use recursion to check if any of the newly assigned random IDs are duplicates
@@ -483,8 +483,11 @@ uniqueID <- function(adj.path.output) {
   }
 }
 
-## given dataframe of adjusted x and y locations, plate, strain, and time period, plot worm paths starting from (0,0)
-## with separate plots for each time period and strain
+## SUMMARY: given dataframe including adjusted x and y locations, strain, and time period, plot worm locations.
+##          with separate plots for each time period and strain. 
+## INPUT: adj.path.output = dataframe with adjusted x locations, adjusted y locations, strain, and timeperiod, named as 
+##                         "adj_x", "adj_y", "strain", and "timeperiod", respectively. 
+## OUTPUT: plots worm paths for each time period and strain, and saves plot in results folder
 plot.path <- function(adj.path.output) {
   
   ## change ID to factor so each unique ID (representing a unique worm) can have a distinct colour in ggplot2
