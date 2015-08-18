@@ -98,8 +98,8 @@ main <- function() {
   
   ## make dataframe with adjusted path data from 100 to 160s (where (x,y) is shifted to (0,0) 
   ## at the start of the time interval), and from 530 to 590s
-  adjusted.path.data <- rbind(adjusted.path(multistrainparsed, 100, 160), 
-                              adjusted.path(multistrainparsed, 530, 590))
+  adjusted.path.data <- rbind(adjusted.path(parsed.data, 100, 160), 
+                              adjusted.path(parsed.data, 530, 590))
   
   ## replace duplicate IDs between plates with unique IDs
   adjusted.path.data <- uniqueID(adjusted.path.data)
