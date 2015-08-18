@@ -425,7 +425,7 @@ adjust.n <- function(von) {
 ##                     ID, strain and plate.
 ##                     These columns should be named as "loc_x", "loc_y", "ID", "strain", and "plate", respectively.
 ##        minT = lower limit of time interval to adjust positions over
-##        maxT = lower limit of time interval to adjust positions over
+##        maxT = upper limit of time interval to adjust positions over
 adjusted.path <- function(parsedData, minT, maxT) {
   
   ## subset parsed data to times between t1 and t2 seconds
