@@ -405,10 +405,11 @@ makeBoxPlot <- function(dataframe, observation, ylabel, subtitle) {
   if (missing(subtitle)) {                                      ## if subtitle argument is missing
     g <- g + ggtitle(paste("Worm", capitalizedObservation))     ## simply make title
   } else {
-    g <- g + ggtitle(bquote(atop(.(paste("Worm", capitalizedObservation)), atop(.(subtitle), ""))))
+    g <- g + ggtitle(bquote(atop(bold(.(paste("Worm", capitalizedObservation))), atop(.(subtitle), ""))))
   }                                         ## otherwise make title with subtitle
                                             ## note that bquote is used to get the title and subtitle values
                                             ## otherwise ggtitle uses them as strings and does not refer to the object values
+                                            ## Also the theme is overriden for title aesthetics, so it necessary to re-bold the title
   
   #save plot
   ggsave(file=paste("results/plot_", observation, ".pdf", sep=""), g, height = 5)
