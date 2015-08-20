@@ -1,12 +1,27 @@
-##load MWT data
-##example input at command line
-##rscript bin/Column_identification_command.R "/Users/catrinaloucks/Documents/PhD/MWT_Locomotion_summary_analysis/data/chore_data/merged.file" 
+## RScript called by locomotion_driver to perform data analysis on MWT data.
+## This description will be updated later.
+##
+## First argument to script = path to merged.file
+## Second argument to script = path to results folder in which to save results
+## Third argument to script = control strain which will be plotted first
+##
+## Example input at command line from MWT root directory:
+##    rscript bin/Column_identification.R data/merged.file results N2
+##
+## Note that if you change the names of what the plots are saved as, or add a new plot,
+## you should update/add these to the currentPlots variable in the locomotion_driver script.
+## If not updated, calling the locomotion driver with a results directory
+## already containing previous results that have not been renamed
+## will result in the previous results being overwritten (without warning).
+
+.libPaths(c("C:/Program Files/R/R-3.2.0/library","C:/Users/Quintin/Documents/R/win-library/3.2", .libPaths()))
 
 main <- function() {
   
   args <- commandArgs(trailingOnly = TRUE)
   file <- args[1]
-  controlStrain <- args[2]
+  resultsPath <- args[2]
+  controlStrain <- args[3]
   
   ## Check if required packages are installed; if they are they will be loaded; if not they will be installed and loaded
   
@@ -35,8 +50,13 @@ main <- function() {
     library(fmsb)
   }
   
-  ##use function to extract column names and change time column from factor to numeric
-  parsed.data  <- extract.col(read.table(file))
+  ## load data (not technically parsed yet)
+  print("Loading data...")
+  parsed.data  <- read.table(file)
+  
+  ## use function to extract column names and change time column from factor to numeric
+  print("Parsing data....")
+  parsed.data <- extract.col(parsed.data)
   
   ## save data as a file
   write.table(parsed.data, file=paste(file,".parsed", sep=""), col.names=TRUE, row.names=FALSE, quote=FALSE, append=FALSE)
@@ -53,8 +73,11 @@ main <- function() {
   ## make control strain the first factor so it is plotted first 
   parsed.data$strain <- setControlStrain(controlStrain, parsed.data)
 
-  ## call function to call speed vs. time
-  plot.speed.time(parsed.data)
+  ## make and save speed plot
+  ggsave(file=paste(resultsPath, "/", "speedVtime.pdf", sep=""), 
+         plot.speed.time(parsed.data), 
+         height = 3, 
+         width = 5)
   
   ##=========================================================================================================
   ## BODY SIZE PLOTS
@@ -64,13 +87,19 @@ main <- function() {
   mean.size.data <- mean.size(parsed.data, 60, 70)
   
   ## make and save plot of worm area (box plot overlayed with violin plot + jittered points)
-  makeBoxPlot(mean.size.data, "area", expression(Area~(mm^{2})))
+  ggsave(file=paste(resultsPath, "/", "plot_area.pdf", sep=""), 
+         makeBoxPlot(mean.size.data, "area", expression(Area~(mm^{2}))),
+         height = 5)
   
   ## make and save plot of worm length (box plot overlayed with violin plot + jittered points)
-  makeBoxPlot(mean.size.data, "length", "Length (mm)")
+  ggsave(file=paste(resultsPath, "/", "plot_length.pdf", sep=""), 
+         makeBoxPlot(mean.size.data, "length", "Length (mm)"),
+         height = 5)
   
   ## make and save plot of worm width (box plot overlayed with violin plot + jittered points)
-  makeBoxPlot(mean.size.data, "width", "Width (mm)")
+  ggsave(file=paste(resultsPath, "/", "plot_width.pdf", sep=""), 
+         makeBoxPlot(mean.size.data, "width", "Width (mm)"),
+         height = 5)
   
   ##=========================================================================================================
   ## PATHLENGTH PLOT
@@ -80,7 +109,9 @@ main <- function() {
   pathlength.data <- aggregatePathlength(parsed.data, 530, 590)
   
   ## make and save plot of worm pathlength (box plot overlayed with violin plot + jittered points)
-  makeBoxPlot(pathlength.data, "pathlength", "Pathlength (mm)", "from 530 to 590s")
+  ggsave(file=paste(resultsPath, "/", "plot_pathlength_530_590s.pdf", sep=""), 
+         makeBoxPlot(pathlength.data, "pathlength", "Pathlength (mm)", "from 530 to 590s"),
+         height = 5)
   
   ##=========================================================================================================
   ## TOTAL DISTANCE PLOT
@@ -90,7 +121,9 @@ main <- function() {
   distance.data <- aggregateDistance(parsed.data, 530, 590)
   
   ## make and save plot of worm distance travelled (box plot overlayed with violin plot + jittered points)
-  makeBoxPlot(distance.data, "distance", "Distance (mm)", "from 530 to 590s")
+  ggsave(file=paste(resultsPath, "/", "plot_distance_530_590s.pdf", sep=""), 
+         makeBoxPlot(distance.data, "distance", "Distance (mm)", "from 530 to 590s"),
+         height = 5)
   
   ##=========================================================================================================
   ## PATH PLOT
@@ -105,14 +138,15 @@ main <- function() {
   adjusted.path.data <- uniqueID(adjusted.path.data)
   
   ## make and save path plot of each worm, separated by strain and time period
-  plot.path(adjusted.path.data)
+  ggsave(file=paste(resultsPath, "/", "path_plot.pdf", sep=""),
+         plot.path(adjusted.path.data))
   
   ##=========================================================================================================
   ## RADAR PLOT (MEDIAN)
   ##=========================================================================================================
   
   ## save radar plot of medians of each strain
-  makeRadarPlots(mean.size.data, pathlength.data, distance.data)
+  makeRadarPlots(mean.size.data, pathlength.data, distance.data, resultsPath)
   
 }
 
@@ -209,8 +243,7 @@ plot.speed.time <- function(dataframe) {
     labs(x="Time", y="Speed") +
     theme_bw()
   
-  ##save plot
-  ggsave(file="results/speedVtime.pdf", g, height = 3, width = 5)
+  return(g)
 }
 
 ##=========================================================================================================
@@ -374,7 +407,7 @@ aggregateDistance <- function(parsedData, minT, maxT) {
 ##        ylabel = The label for the y-axis, as a string.
 ##                 Also accepts expressions (eg: expression(Area~(mm^{2}))).
 ##        subtitle = subtitle for plot; this argument is optional.
-## OUTPUT: saves plot in results folder as plot_observation.pdf
+## OUTPUT: saves plot in specified results folder as plotName.pdf
 makeBoxPlot <- function(dataframe, observation, ylabel, subtitle) {
   
   ## Capitalize the observation name, for example "area" to "Area"
@@ -410,9 +443,7 @@ makeBoxPlot <- function(dataframe, observation, ylabel, subtitle) {
                                             ## note that bquote is used to get the title and subtitle values
                                             ## otherwise ggtitle uses them as strings and does not refer to the object values
                                             ## Also the theme is overriden for title aesthetics, so it necessary to re-bold the title
-  
-  #save plot
-  ggsave(file=paste("results/plot_", observation, ".pdf", sep=""), g, height = 5)
+  return(g)
 }
 
 ##=========================================================================================================
@@ -525,15 +556,14 @@ plot.path <- function(adj.path.output) {
     geom_text(data=pathObsN, aes(x=0, y=-9, label=n),   ## overlay number of worms
               colour="black", size = 3)
   
-  ##save plot
-  ggsave(file="results/path_plot.pdf", g)
+  return(g)
 }
 
 ##=========================================================================================================
 ## RADARPLOT FUNCTIONS
 ##=========================================================================================================
 
-makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output) {
+makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output, resultsPath) {
   
   ## get strains from mean.size.output (could have used path/distance dataframes, should all be the same)
   strainLevels <- levels(mean.size.output$strain)
@@ -553,14 +583,14 @@ makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output) {
   for (i in 1:length(strainLevels)) {
     
     sizes <- mean.size.output[mean.size.output$strain == strainLevels[i],]
-    pathlens <- aggPath.output[aggPath.output$strain == strainLevels[i],]
+    pathlengths <- aggPath.output[aggPath.output$strain == strainLevels[i],]
     distances <- aggDist.output[aggDist.output$strain == strainLevels[i],]
     
     strain <- c(strain, strainLevels[i])
     width <- c(width, median(sizes$width))
     length <- c(length, median(sizes$length))
     area <- c(area, median(sizes$area))
-    pathlength <- c(pathlength, median(pathlens$pathlen))
+    pathlength <- c(pathlength, median(pathlengths$pathlength))
     distance <- c(distance, median(distances$distance))
   }
   
@@ -576,7 +606,7 @@ makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output) {
     distance = c(4, 0))
   
   ## write to PDF
-  pdf("results/radar_plot.pdf")
+  pdf(paste(resultsPath, "/", "radar_plot.pdf", sep=""))
   
   ## n2mfrow(length(strainLevels)) automatically chooses good values for mfrow based on # of strains
   ## margins are specified so that plots are not cutoff, and the title is not too high
