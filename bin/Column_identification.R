@@ -14,8 +14,6 @@
 ## already containing previous results that have not been renamed
 ## will result in the previous results being overwritten (without warning).
 
-.libPaths(c("C:/Program Files/R/R-3.2.0/library","C:/Users/Quintin/Documents/R/win-library/3.2", .libPaths()))
-
 main <- function() {
   
   args <- commandArgs(trailingOnly = TRUE)
