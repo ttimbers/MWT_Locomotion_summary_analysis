@@ -405,7 +405,7 @@ aggregateDistance <- function(parsedData, minT, maxT) {
 ##        ylabel = The label for the y-axis, as a string.
 ##                 Also accepts expressions (eg: expression(Area~(mm^{2}))).
 ##        subtitle = subtitle for plot; this argument is optional.
-## OUTPUT: saves plot in specified results folder as plotName.pdf
+## OUTPUT: the plot
 makeBoxPlot <- function(dataframe, observation, ylabel, subtitle) {
   
   ## Capitalize the observation name, for example "area" to "Area"
@@ -526,7 +526,7 @@ uniqueID <- function(adj.path.output) {
 ##          with separate plots for each time period and strain. 
 ## INPUT: adj.path.output = dataframe with adjusted x locations, adjusted y locations, strain, and timeperiod, named as 
 ##                         "adj_x", "adj_y", "strain", and "timeperiod", respectively. 
-## OUTPUT: plots worm paths for each time period and strain, and saves plot in results folder
+## OUTPUT: plot of worm paths for each time period and strain
 plot.path <- function(adj.path.output) {
   
   ## change ID to factor so each unique ID (representing a unique worm) can have a distinct colour in ggplot2
