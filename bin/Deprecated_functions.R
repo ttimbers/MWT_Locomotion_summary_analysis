@@ -170,3 +170,69 @@ plot.strains <- function(path.output.start, path.output.end) {
   ggsave(file="results/path_plot.pdf", g)
   
 }
+
+## =======================================================================================
+## OLD SIZE FUNCTION (before giving it arguments for grouping variables and variables to aggregate over)
+## =======================================================================================
+
+## Example call:
+## use function to get length, width, and area of each worm, averaged over 60 to 70s
+mean.size.data <- mean.size(parsed.data, 60, 70)
+
+## SUMMARY: given parsed data return df with mean area, length, and width of each worm
+## INPUT: parsedData = data with appropriate column names, with information for worm area, length, width, and time,
+##                     as well as worm ID, strain and plate.
+##                     These columns should be named as "area", "length", "width", "time", "ID", 
+##                     "strain", and "plate", respectively (without quotations).
+##        minT = lower limit of time interval to average over
+##        maxT = upper limit of time interval to average over
+## 
+## OUTPUT: A dataframe where rows consist of unique combinations of worm ID, plate, and strain
+##         (ie each row has data for a single worm).
+##         Columns include ID, plate, strain, 
+##         as well as the length, width, and area averaged over the time interval specified.
+##
+## Input data will be subsetted to the time interval specified. 
+## The width, length, and area of each worm will be averaged over this time interval.
+## In order to do this for each worm, the data is aggregated by worm ID, strain, and plate
+## This is necessary as worm IDs are not unique between plates and strains.
+mean.size <- function(parsedData, minT, maxT) {
+  
+  ## subset parsed data to times between minT and maxT
+  time.subset <- parsedData[parsedData$time < maxT & parsedData$time > minT, ]
+  
+  ## aggregate mean area, length, and width, grouped by ID, strain, and plate
+  mean.subset <- aggregate(cbind(area, length, width) ~ ID + strain + plate, time.subset, mean)  
+  
+  return(mean.subset)
+  
+}
+
+##=========================================================================================================
+## OLD MEDIAN CONFIDENCE INTERVALS
+##=========================================================================================================
+
+## Old package used to make median confidence intervals; unfortunately package was not updated to latest R
+## version and no longer works.
+
+require(fmsb)
+
+## given list of numbers return upper boundary of 95% confidence interval for the median (using ci.median method)
+errorUpper <- function(x){
+  ci <- ci.median(x)
+  text.ci <- ci[[2]]
+  upper <- text.ci[3]
+  return(upper)
+} 
+
+## given list of numbers return lower boundary of 95% confidence interval for the median (using ci.median method)
+errorLower <- function(x){ 
+  ci <- ci.median(x)
+  text.ci <- ci[[2]]
+  lower <- text.ci[2]
+  return(lower)
+} 
+
+## add median point + median error bars to a ggplot
+g <- g + stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) +    ## add error bar for median confidence interval (95%)
+  stat_summary(fun.y=median, geom="point", size=2, color="white") ## add a median point

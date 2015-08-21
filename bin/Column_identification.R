@@ -81,8 +81,12 @@ main <- function() {
   ## BODY SIZE PLOTS
   ##=========================================================================================================
   
-  ## use function to get length, width, and area of each worm, averaged over 60 to 70s
-  mean.size.data <- mean.size(parsed.data, 60, 70)
+  ## Aggregate data, using mean function over worm area, length, and width from 60 to 70s, 
+  ## grouped by ID, strain and plate. This is necessary as worm IDs are not unique between plates and strains.
+  mean.size.data <- aggregateMean(parsed.data, 60, 70, 
+                                  c("area", "length", "width"), 
+                                  c("ID", "strain", "plate"), 
+                                  "time")
   
   ## make and save plot of worm area (box plot overlayed with violin plot + jittered points)
   ggsave(file=paste(resultsPath, "/", "plot_area.pdf", sep=""), 
@@ -245,33 +249,38 @@ plot.speed.time <- function(dataframe) {
 }
 
 ##=========================================================================================================
-## BODY SIZE FUNCTION
+## MEAN AGGREGATION FUNCTION
 ##=========================================================================================================
 
-## SUMMARY: given parsed data return df with mean area, length, and width of each worm
-## INPUT: parsedData = data with appropriate column names, with information for worm area, length, width, and time,
-##                     as well as worm ID, strain and plate.
-##                     These columns should be named as "area", "length", "width", "time", "ID", 
-##                     "strain", and "plate", respectively (without quotations).
+## SUMMARY: Subsets dataframe to given time interval, then aggregates dataframe, 
+##          grouped by given variables and aggregated over given variables, 
+##          using mean() as the aggregate function.
+## INPUT: parsedData = dataframe with appropriate column names
 ##        minT = lower limit of time interval to average over
 ##        maxT = upper limit of time interval to average over
+##        toAverage = vector of column names to be averaged (example: cbind("area", "length", "width"))
+##        toGroup = vector of column names to group data by (example: cbind"ID", "plate", "strain")
+##        timeName = name of the time column in the dataframe (example: "time")
 ## 
-## OUTPUT: A dataframe where rows consist of unique combinations of worm ID, plate, and strain
-##         (ie each row has data for a single worm).
-##         Columns include ID, plate, strain, 
-##         as well as the length, width, and area averaged over the time interval specified.
+## OUTPUT: A dataframe where rows consist of unique combinations of grouping variables.
+##         Columns include the grouping variables, and the columns which were aggregated by mean().
 ##
-## Input data will be subsetted to the time interval specified. 
-## The width, length, and area of each worm will be averaged over this time interval.
-## In order to do this for each worm, the data is aggregated by worm ID, strain, and plate
-## This is necessary as worm IDs are not unique between plates and strains.
-mean.size <- function(parsedData, minT, maxT) {
+## For our purposes, we will use this to find the mean worm length, width, and area from 60-70s, grouped by
+## ID strain and plate to access each worm.
+
+aggregateMean <- function(parsedData, minT, maxT, toAverage, toGroup, timeName) {
   
   ## subset parsed data to times between minT and maxT
-  time.subset <- parsedData[parsedData$time < maxT & parsedData$time > minT, ]
+  time.subset <- parsedData[parsedData[[timeName]] < maxT & parsedData[[timeName]] > minT,]
   
-  ## aggregate mean area, length, and width, grouped by ID, strain, and plate
-  mean.subset <- aggregate(cbind(area, length, width) ~ ID + strain + plate, time.subset, mean)  
+  ## generate string specifying variables for ddply to aggregate over, using mean to aggregate
+  ## for example turn c("1", "2") into "1 = mean(1), 2 = mean(2)"
+  toAverageString <- paste(toAverage, " = mean(", toAverage, ")", sep = "", collapse = ", ")
+  
+  ## Use parse to create unevaluated 
+  ## Then use eval to evaluate the ddply function with correct arguments
+  ## Attempted to use do.call() and/or get instead of eval(parse(...)), but couldn't get a solution...
+  mean.subset <- eval(parse(text = paste("ddply(time.subset, toGroup, here(summarize),", toAverageString, ")")))
   
   return(mean.subset)
   
