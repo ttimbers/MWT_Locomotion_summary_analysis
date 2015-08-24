@@ -236,3 +236,197 @@ errorLower <- function(x){
 ## add median point + median error bars to a ggplot
 g <- g + stat_summary(fun.ymax = errorUpper, fun.ymin = errorLower, geom = "linerange", size=3.5, colour="black" ) +    ## add error bar for median confidence interval (95%)
   stat_summary(fun.y=median, geom="point", size=2, color="white") ## add a median point
+
+##=========================================================================================================
+## MEAN AGGREGATION FUNCTION
+##=========================================================================================================
+
+## SUMMARY: Subsets dataframe to given time interval, then aggregates dataframe, 
+##          grouped by given variables and aggregated over given variables, 
+##          using mean() as the aggregate function.
+## INPUT: parsedData = dataframe with appropriate column names
+##        minT = lower limit of time interval to average over
+##        maxT = upper limit of time interval to average over
+##        toAverage = vector of column names to be averaged (example: cbind("area", "length", "width"))
+##        toGroup = vector of column names to group data by (example: cbind"ID", "plate", "strain")
+##        timeName = name of the time column in the dataframe (example: "time")
+## 
+## OUTPUT: A dataframe where rows consist of unique combinations of grouping variables.
+##         Columns include the grouping variables, and the columns which were aggregated by mean().
+##
+## For our purposes, we will use this to find the mean worm length, width, and area from 60-70s, grouped by
+## ID strain and plate to access each worm.
+
+aggregateMean <- function(parsedData, minT, maxT, toAverage, toGroup, timeName) {
+  
+  ## subset parsed data to times between minT and maxT
+  time.subset <- parsedData[parsedData[[timeName]] < maxT & parsedData[[timeName]] > minT,]  
+  
+  return(mean.subset)
+  
+  ## generate string specifying variables for ddply to aggregate over, using mean to aggregate
+  ## for example turn c("1", "2") into "1 = mean(1), 2 = mean(2)"
+  toAverageString <- paste(toAverage, " = mean(", toAverage, ")", sep = "", collapse = ", ")
+  
+  ## Use parse to create unevaluated 
+  ## Then use eval to evaluate the ddply function with correct arguments
+  ## Attempted to use do.call() and/or get instead of eval(parse(...)), but couldn't get a solution...
+  mean.subset <- eval(parse(text = paste("ddply(time.subset, toGroup, here(summarize),", toAverageString, ")")))
+  
+  return(mean.subset)
+  
+}
+
+
+##=========================================================================================================
+## OLD AGGREGATE PATHLENGTH FUNCTION
+##=========================================================================================================
+
+pathlength.data <- aggregatePathlength(parsed.data, 530, 590)
+
+## SUMMARY: given parsed data return data frame with pathlength for each worm over specified time interval
+## INPUT: parsedData = data with appropriate column names, with information for worm pathlength, ID, strain and plate.
+##                     These columns should be named as "pathlength", "ID", "strain", and "plate", respectively.
+##        minT = lower limit of time interval to find pathlength over
+##        maxT = upper limit of time interval to find pathlength over
+## 
+## OUTPUT: A dataframe where rows consist of unique combinations of worm ID, plate, and strain
+##         (ie each row has data for a single worm).
+##         Columns include ID, plate, strain, 
+##         as well as the pathlength calculated over the time interval specified.
+##
+## Input data will be subsetted to the time interval specified. 
+## The pathlength for each worm will be calculated over this time interval.
+## In order to do this for each worm, the data is aggregated by worm ID, strain, and plate
+## This is necessary as worm IDs are not unique between plates and strains.
+## The helper function pathlength is used to calculate pathlength.
+
+aggregatePathlength <- function(parsedData, minT, maxT) {
+  
+  ## subset parsed data to times between minT and max T
+  time.subset <- parsedData[parsedData$time > minT & parsedData$time < maxT, ]
+  
+  ## aggregate data with pathlength function, grouping by ID, strain, and plate
+  pathlength.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
+                             pathlength = pathlength(pathlen))
+  
+  ## drop rows with NA pathlengths
+  pathlength.output <- na.omit(pathlength.output)
+  
+  return(pathlength.output)
+  
+}
+
+
+##=========================================================================================================
+## OLD AGGREGATE DISTANCE FUNCTION
+##=========================================================================================================
+
+distance.data <- aggregateDistance(parsed.data, 530, 590)
+
+## SUMMARY: given parsed data return data frame with total distance travelled over specified time interval
+## INPUT: parsedData = data with appropriate column names, with information for worm x-location, y-location, 
+##                     ID, strain and plate.
+##                     These columns should be named as "loc_x", "loc_y", "ID", "strain", and "plate", respectively.
+##        minT = lower limit of time interval to find distance travelled over
+##        maxT = upper limit of time interval to find distance travelled over
+## 
+## OUTPUT: A dataframe where rows consist of unique combinations of worm ID, plate, and strain
+##         (ie each row has data for a single worm).
+##         Columns include ID, plate, strain, 
+##         as well as the distance travelled, calculated over the time interval specified.
+##
+## Input data will be subsetted to the time interval specified. 
+## The distance travelled for each worm will be calculated over this time interval.
+## In order to do this for each worm, the data is aggregated by worm ID, strain, and plate
+## This is necessary as worm IDs are not unique between plates and strains.
+## The helper function totalDistance is used to calculate the distance travelled.
+aggregateDistance <- function(parsedData, minT, maxT) {
+  
+  ## subset parsed data to times between minT and maxT seconds
+  time.subset <- parsedData[parsedData$time > minT & parsedData$time < maxT, ]
+  
+  ## aggregate data with distance function, grouping by ID, strain, and plate
+  aggDist.output <- ddply(time.subset, c("ID", "strain", "plate"), summarise,
+                          distance = totalDistance(cbind(loc_x,loc_y)))
+  
+  return(aggDist.output)
+  
+}
+
+##=========================================================================================================
+## OLD ADJUST PATH FUNCTION
+##=========================================================================================================
+
+
+## make dataframe with adjusted path data from 100 to 160s (where (x,y) is shifted to (0,0) 
+## at the start of the time interval), and from 530 to 590s
+adjusted.path.data <- rbind(adjusted.path(parsed.data, 100, 160), 
+                            adjusted.path(parsed.data, 530, 590))
+
+
+## SUMMARY: given parsed data, return a dataframe with adjusted x and y positions of each worm so that its
+##          initial position is (0,0), for the time interval specified
+## INPUT: parsedData = data with appropriate column names, with information for worm x-location, y-location, 
+##                     ID, strain and plate.
+##                     These columns should be named as "loc_x", "loc_y", "ID", "strain", and "plate", respectively.
+##        minT = lower limit of time interval to adjust positions over
+##        maxT = upper limit of time interval to adjust positions over
+adjusted.path <- function(parsedData, minT, maxT) {
+  
+  ## subset parsed data to times between t1 and t2 seconds
+  time.subset <- parsedData[parsedData$time > minT & parsedData$time < maxT, ]
+  print(str(time.subset))
+  
+  # summarize dataframe, by shifting x and y values to start from 0 for each worm (grouped by ID, plate, and strain)
+  adjusted.path.output <- ddply(time.subset, cbind("ID", "plate", "strain"), summarize,
+                                adj_x = adjust.n(loc_x),
+                                adj_y = adjust.n(loc_y))
+  
+  # Add column with info on time period
+  adjusted.path.output$timeperiod <- paste(minT, "s to ", maxT, "s", sep = "")
+  
+  return(adjusted.path.output)
+}
+
+
+## SUMMARY: Replaces duplicate worm IDs between plates with new IDs
+## INPUT: adj.path.output = parsed data with adjusted x and y locations, plate, and strain
+##                          columns should be named as "adj_x", "adj_y", "plate", and "strain", respectively.
+## OUTPUT: the input dataframe with duplicate IDs replaced with random IDs
+## This is necessary to give each worm a unique colour on the plot (by ID), as well as to count the number of unique worms plotted.
+## Note that time period is not included as a grouping factor when finding duplicate IDs, as the same worm (and thus same ID) may be
+## tracked in multiple time periods.
+uniqueID <- function(adj.path.output) {
+  
+  ## group by ID, plate and strain, and aggregate ID by mean (IDs should be identical in each grouping)
+  groups <- ddply(adj.path.output, cbind("ID", "plate", "strain"), summarize, ID = mean(ID))  
+  
+  ## find aggregated combinations of ID + plate + strain that have duplicate IDs (different plates might have duplicate IDs)
+  ## note that we do not include timeperiod here, as the same worm may be tracked at different times giving it the same ID
+  duplicateRows <- groups[duplicated(groups$ID),]  
+  
+  ## if there are duplicate IDs, replace the IDs in adj.path.output with a new unique ID (for each grouping of plate+strain+id)
+  if (nrow(duplicateRows) > 0) {              
+    
+    numberDuplicates <- nrow(duplicateRows)
+    
+    for (i in 1:numberDuplicates) {  
+      
+      duplicateRow <- duplicateRows[i,]
+      plate <- duplicateRow$plate
+      strain <- duplicateRow$strain
+      ID <- duplicateRow$ID
+      
+      adj.path.output[adj.path.output$plate == plate & adj.path.output$strain == strain & adj.path.output$ID == ID,]$ID <- runif(1)
+    }
+    
+    ## use recursion to check if any of the newly assigned random IDs are duplicates
+    uniqueID(adj.path.output)
+    
+  } else {
+    
+    ## return adj.path.output
+    return(adj.path.output)
+  }
+}
