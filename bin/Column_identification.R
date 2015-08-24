@@ -57,10 +57,12 @@ main <- function() {
   parsed.data  <- read.table(file)
   
   ## use function to extract column names and change time column from factor to numeric
-  print("Parsing data....")
+  print("Parsing data...")
   parsed.data <- extract.col(parsed.data)
   
+  
   ## save data as a file
+  print("Saving parsed data...")
   write.table(parsed.data, file=paste(file,".parsed", sep=""), col.names=TRUE, row.names=FALSE, quote=FALSE, append=FALSE)
     
   ## check if control strain is valid; if invalid, prompt user to input another strain
@@ -74,7 +76,8 @@ main <- function() {
   
   ## make control strain the first factor so it is plotted first 
   parsed.data$strain <- setControlStrain(controlStrain, parsed.data)
-
+  print("Starting data analysis...")
+  
   ## make and save speed plot
   ggsave(file=paste(resultsPath, "/", "speedVtime.pdf", sep=""), 
          plot.speed.time(parsed.data), 
@@ -84,15 +87,15 @@ main <- function() {
   ##=========================================================================================================
   ## BODY SIZE PLOTS
   ##=========================================================================================================
-  
+
   ## Find the means of each variable for each worm, from 60 to 70 seconds.
   ## Not all variables will be meaningful, for example the mean of "frame".
   ## Note that it is necessary to group by ID, plate, and strain as worms between plates can have duplicate IDs
   ## (plus we want to keep track of the plate)
-  wormMeans <- parsed.data[parsed.data$time > 60 & parsed.data$time < 70,] %>%  
+  wormMeans <- parsed.data[parsed.data$time > 60 & parsed.data$time < 70,] %>%
     group_by(ID, plate, strain) %>%  
     summarise_each(funs(mean)) 
-    
+
   ## make and save plot of worm area (box plot overlayed with violin plot + jittered points)
   ggsave(file=paste(resultsPath, "/", "plot_area.pdf", sep=""), 
          makeBoxPlot(wormMeans, "area", expression(Area~(mm^{2}))),
@@ -107,7 +110,7 @@ main <- function() {
   ggsave(file=paste(resultsPath, "/", "plot_width.pdf", sep=""), 
          makeBoxPlot(wormMeans, "width", "Width (mm)"),
          height = 5)
-  
+
   ##=========================================================================================================
   ## PATHLENGTH PLOT
   ##=========================================================================================================
@@ -170,7 +173,7 @@ main <- function() {
   ##=========================================================================================================
   
   ## save radar plot of medians of each strain
-  makeRadarPlots(mean.size.data, pathlength.data, distance.data, resultsPath)
+  makeRadarPlots(wormMeans, pathlength.data, distance.data, resultsPath)
   
 }
 
@@ -193,7 +196,7 @@ extract.col <- function(data){
   new.data <- cbind(date, plate, strain, time, data[,2:dim(data)[2]])  
   
   ##rename columns  
-  colnames(new.data) <- c("date", "plate", "strain", "time", "frame", "ID", "persistance", "area", "speed", "angularspeed", "length", "rellength", "width", "relwidth", "aspect", "relaspect", "midline", "morphwidth", "kink", "bias", "pathlen", "curve", "dir", "loc_x", "loc_y", "vel_x", "vel_y", "orient", "crab")
+  colnames(new.data) <- c("date", "plate", "strain", "time", "frame", "ID", "persistance", "area", "speed", "angularspeed", "length", "rellength", "width", "relwidth", "aspect", "relaspect", "midline", "morphwidth", "kink", "bias", "pathlen", "curve", "dir", "loc_x", "loc_y", "vel_x", "vel_y", "orient", "crab", "NA", "NA1", "NA2", "NA3")
   
   ##replace time column (factor) with time as numeric
   new.data$time  <- as.numeric(levels(new.data$time))[new.data$time]
@@ -471,10 +474,10 @@ plot.path <- function(adj.path.output) {
 ## RADARPLOT FUNCTIONS
 ##=========================================================================================================
 
-makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output, resultsPath) {
+makeRadarPlots <- function(wormMeans, aggPath.output, aggDist.output, resultsPath) {
   
-  ## get strains from mean.size.output (could have used path/distance dataframes, should all be the same)
-  strainLevels <- levels(mean.size.output$strain)
+  ## get strains from wormMeans (could have used path/distance dataframes, should all be the same)
+  strainLevels <- levels(wormMeans$strain)
   
   ## we will create a dataframe with features as columns (ie width, pathlength, distance, speed, etc.), 
   ## which will have the median values for each strain.
@@ -490,7 +493,7 @@ makeRadarPlots <- function(mean.size.output, aggPath.output, aggDist.output, res
   ## then we loop through the strains, and add median values to the columns (as well as the strain)
   for (i in 1:length(strainLevels)) {
     
-    sizes <- mean.size.output[mean.size.output$strain == strainLevels[i],]
+    sizes <- wormMeans[wormMeans$strain == strainLevels[i],]
     pathlengths <- aggPath.output[aggPath.output$strain == strainLevels[i],]
     distances <- aggDist.output[aggDist.output$strain == strainLevels[i],]
     
