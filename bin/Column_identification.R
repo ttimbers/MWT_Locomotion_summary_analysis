@@ -442,7 +442,10 @@ plot.path <- function(adj.path.output) {
   adj.path.output$ID <- as.factor(adj.path.output$ID)
   
   ## make DF with number of worms for each grouping of strain and timeperiod
-  pathObsN <- summarise(adj.path.output, strain, timeperiod, n = paste("n=", length(unique(ID))))
+  pathObsN <- group_by(adj.path.output, strain, timeperiod) %>%
+    summarize(n = paste("n=", length(unique(ID))))
+    
+    summarise(adj.path.output, strain, timeperiod, n = paste("n=", length(unique(ID))))
   
   g <- ggplot(data=adj.path.output, aes(x=adj_x, y=adj_y)) + 
     theme(plot.title = element_text(size=20, face="bold", vjust=2), ## make the plot title larger and higher
